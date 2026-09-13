@@ -4,7 +4,7 @@ import hmac
 import json
 import os
 import math
-from datetime import datetime
+from datetime import datetime, date
 import urllib.request
 from flask import Flask, jsonify
 
@@ -25,8 +25,20 @@ SITE_LAT = 26.2439
 SITE_LON = 88.7967
 ARRAY_WATT = 800.0 # 2x REC 400W
 
+# In-Memory Cache
 token_cache = {"access_token": "", "expire_time": 0}
 weather_cache = {"t": 0, "factor": 1.0, "code": 0, "rain": 0.0, "temp": 28.0, "cloud": 0}
+device_cache = {"t": 0, "data": {}}
+
+# Grid Uptime / Outage Tracker
+grid_tracker = {
+    "date": str(date.today()),
+    "on_seconds": 0,
+    "off_seconds": 0,
+    "outages": 0,
+    "last_state": None,
+    "last_tick": time.time()
+}
 
 def calc_sign(method, path, body="", access_token=""):
     t = str(int(time.time() * 1000))
@@ -55,7 +67,7 @@ def get_access_token():
         print(f"Token error: {e}")
     return None
 
-def get_device_data(device_id):
+def fetch_single_device(device_id):
     token = get_access_token()
     if not token:
         return {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0}
@@ -93,6 +105,21 @@ def get_device_data(device_id):
         print(f"Device error ({device_id}): {e}")
     return {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0}
 
+def get_all_devices_cached():
+    now = time.time()
+    # ৪ সেকেন্ডের হাই-স্পিড ক্যাশ (ব্রাউজার দ্রুত রিফ্রেশ হলেও Tuya-তে প্রেসার পড়বে না)
+    if now - device_cache["t"] < 4 and device_cache["data"]:
+        return device_cache["data"]
+    
+    out_d = fetch_single_device(OUTPUT_DEVICE_ID)
+    in_d = fetch_single_device(CHARGING_DEVICE_ID)
+    main_d = fetch_single_device(MAIN_DEVICE_ID)
+    
+    data = {"out": out_d, "in": in_d, "main": main_d}
+    device_cache["t"] = now
+    device_cache["data"] = data
+    return data
+
 def get_sun_elevation(lat=SITE_LAT, lon=SITE_LON):
     now = datetime.utcnow()
     day_of_year = now.timetuple().tm_yday
@@ -103,7 +130,6 @@ def get_sun_elevation(lat=SITE_LAT, lon=SITE_LON):
     sin_el = math.sin(lat_rad) * math.sin(dec_rad) + math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad)
     return round(math.degrees(math.asin(max(-1.0, min(1.0, sin_el)))), 1)
 
-# লাইভ বৃষ্টি ও ক্লাউড ডাটা ফেচিং (চিলাহাটি)
 def get_live_weather():
     now = time.time()
     if now - weather_cache["t"] < 600:
@@ -119,11 +145,11 @@ def get_live_weather():
             rain = curr.get("precipitation", 0.0)
             
             # WMO রেইন/ক্লাউড ফ্যাক্টর হিসাব
-            if code in [95, 96, 99]: f = 0.12     # বজ্রবৃষ্টি
+            if code in [95, 96, 99]: f = 0.12
             elif code in [55, 63, 65, 81, 82]: f = 0.18 # ভারী বৃষ্টি
-            elif code in [51, 53, 61, 80]: f = 0.25     # হালকা গুঁড়ি গুঁড়ি বৃষ্টি
-            elif code == 3 or cloud > 85: f = 0.40      # ঘন মেঘলা আকাশ
-            elif code == 2 or cloud > 50: f = 0.70      # আংশিক মেঘলা
+            elif code in [51, 53, 61, 80]: f = 0.25     # হালকা বৃষ্টি
+            elif code == 3 or cloud > 85: f = 0.40      # মেঘলা
+            elif code == 2 or cloud > 50: f = 0.70      # আংশিক মেঘ
             elif code == 1: f = 0.90
             else: f = 1.0
 
@@ -140,16 +166,41 @@ def get_live_weather():
         print(f"Weather error: {e}")
     return weather_cache
 
+def update_grid_tracker(is_grid):
+    now = time.time()
+    today_str = str(date.today())
+    if grid_tracker["date"] != today_str:
+        grid_tracker["date"] = today_str
+        grid_tracker["on_seconds"] = 0
+        grid_tracker["off_seconds"] = 0
+        grid_tracker["outages"] = 0
+        grid_tracker["last_state"] = None
+        grid_tracker["last_tick"] = now
+
+    dt = min(max(now - grid_tracker["last_tick"], 0), 60)
+    grid_tracker["last_tick"] = now
+
+    if is_grid:
+        grid_tracker["on_seconds"] += dt
+    else:
+        grid_tracker["off_seconds"] += dt
+
+    if grid_tracker["last_state"] is True and is_grid is False:
+        grid_tracker["outages"] += 1
+    grid_tracker["last_state"] = is_grid
+
 # --- SAKO LITE V10 API BRIDGE ---
 
 @app.route("/api/states")
 def ha_states():
-    out_data = get_device_data(OUTPUT_DEVICE_ID)
-    in_data = get_device_data(CHARGING_DEVICE_ID)
-    main_data = get_device_data(MAIN_DEVICE_ID)
+    devs = get_all_devices_cached()
+    out_data = devs["out"]
+    in_data = devs["in"]
+    main_data = devs["main"]
 
     now_iso = datetime.utcnow().isoformat() + "Z"
     is_grid = (in_data.get("voltage", 0) > 120 or main_data.get("voltage", 0) > 120 or in_data.get("online", False))
+    update_grid_tracker(is_grid)
 
     load_w = out_data.get("power", 0.0)
     grid_w = in_data.get("power", 0.0)
@@ -158,7 +209,7 @@ def ha_states():
     sun_el = get_sun_elevation()
     wx = get_live_weather()
 
-    # বাস্তব সূর্য কোণ ও বৃষ্টির আলোকে প্রকৃত সোলার ক্ষমতা
+    # বাস্তব সূর্য কোণ ও বৃষ্টির আলোকে সোলার পোটেনশিয়াল
     if sun_el <= 2:
         weather_potential = 0.0
     else:
@@ -166,14 +217,12 @@ def ha_states():
         clear_sky_pot = ARRAY_WATT * sin_el * 0.82
         weather_potential = clear_sky_pot * wx["factor"]
 
-    # সোলার ও ব্যাটারি নিখুঁত বণ্টন
+    # সোলার ও ব্যাটারি শক্তি বণ্টন
     if not is_grid:
-        # গ্রিড ছাড়া: লোড চলবে সোলার + ব্যাটারি মিলিয়ে
         pv_w = min(load_w, max(0.0, weather_potential))
         dis_w = max(0.0, (load_w / 0.90 + 35.0) - pv_w)
         ch_w = 0.0
     else:
-        # গ্রিড থাকলে
         if grid_w <= 5:
             pv_w = min(load_w, max(0.0, weather_potential))
         else:
@@ -181,6 +230,9 @@ def ha_states():
             pv_w = min(calc_pv, max(0.0, weather_potential))
         dis_w = 0.0
         ch_w = max(0.0, pv_w - load_w / 0.90)
+
+    on_hours = round(grid_tracker["on_seconds"] / 3600.0, 1)
+    off_hours = round(grid_tracker["off_seconds"] / 3600.0, 1)
 
     states = [
         {"entity_id": "sensor.baasaar_mein_laain_power", "state": str(main_w), "last_updated": now_iso},
@@ -193,6 +245,9 @@ def ha_states():
         {"entity_id": "sensor.16a_output_line_voltage", "state": str(out_data.get("voltage", 0.0)), "last_updated": now_iso},
         {"entity_id": "sensor.16a_output_line_current", "state": str(out_data.get("current", 0.0)), "last_updated": now_iso},
         {"entity_id": "binary_sensor.energy_mate_v4_grid_present", "state": "on" if is_grid else "off", "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_grid_on_today", "state": str(on_hours), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_grid_off_today", "state": str(off_hours), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_grid_outages_today", "state": str(grid_tracker["outages"]), "last_updated": now_iso},
         {"entity_id": "sensor.energy_mate_v4_pv_estimated_power", "state": str(round(pv_w, 1)), "last_updated": now_iso},
         {"entity_id": "sensor.energy_mate_v4_battery_charge_power", "state": str(round(ch_w, 1)), "last_updated": now_iso},
         {"entity_id": "sensor.energy_mate_v4_battery_discharge_power", "state": str(round(dis_w, 1)), "last_updated": now_iso},
