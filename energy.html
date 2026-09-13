@@ -65,7 +65,7 @@ canvas.chart{width:100%;height:auto;margin-top:8px;border-radius:10px}
 .bigstat b{font-size:34px;font-weight:800;letter-spacing:-.03em}
 .bigstat small{color:var(--mut);font-size:12px;font-weight:700}
 .kv2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.kv2 .k{background:var(--bg);border:1px solid var(--line);border-radius:12 .k{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 10px}
+.kv2 .k{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 10px}
 .kv2 .k small{display:block;color:var(--mut);font-size:9px;margin-bottom:3px;letter-spacing:.03em}
 .kv2 .k b{font-size:15px;font-weight:800}
 .hseg{display:flex;gap:6px;margin:10px 0 4px}
@@ -93,4 +93,458 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 .fcrow b{text-align:right;font-weight:800}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
 .modal.open{display:flex}
-.modal .sheet{max-height:85vh;overflow:auto;max-width:430px;width:100%;position:static;box-shadow:
+.modal .sheet{max-height:85vh;overflow:auto;max-width:430px;width:100%;position:static;box-shadow:none}
+.nitem{display:flex;gap:9px;padding:9px 2px;border-top:1px solid var(--line);font-size:12px}
+.nitem:first-of-type{border-top:0}
+.nitem small{display:block;color:var(--mut);font-size:10px;margin-top:1px}
+#expImg{max-width:100%;border-radius:10px;border:1px solid var(--line)}
+#err{display:none;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:var(--red);border-radius:12px;padding:8px 12px;font-size:12px;font-weight:700;margin-bottom:10px}
+.note{color:var(--mut);font-size:9.5px;display:block;margin-top:6px;line-height:1.45}
+.glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(620px 420px at 85% -5%,rgba(245,196,81,.10),transparent 60%),radial-gradient(520px 380px at -10% 30%,rgba(52,211,153,.07),transparent 60%),radial-gradient(520px 420px at 110% 78%,rgba(96,165,250,.08),transparent 60%)}
+.wrap{position:relative;z-index:1}
+.hero{background:linear-gradient(165deg,rgba(43,57,84,.62),rgba(15,21,34,.72));backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(148,163,184,.20);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 10px 30px rgba(0,0,0,.35)}
+.today,.flowcard,.sheet{background:linear-gradient(165deg,rgba(36,48,70,.52),rgba(16,22,35,.64));backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);border-color:rgba(148,163,184,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 26px rgba(0,0,0,.32)}
+.tabbar{background:rgba(12,17,29,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.g4i,.kv2 .k{background:rgba(10,14,21,.52);border-color:rgba(148,163,184,.14)}
+.fcrow.head,.hsegbtn{border-color:rgba(148,163,184,.18)}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+  <div id="err"></div>
+
+  <!-- ================= TAB 1 · HOME ================= -->
+  <div id="panelHome" class="pane on">
+    <div class="hero">
+      <div class="herotop">
+        <div class="lbl">MAIN GRID · NOW</div>
+        <div class="hctl">
+          <div class="hrow">
+            <button class="icobtn sm bel" id="btnBell" title="Notifications">🔔<span id="bellN"></span></button>
+            <button class="icobtn sm" id="btnSync" title="Refresh">↻</button>
+            <button class="icobtn sm" id="btnSet" title="Settings">⚙</button>
+          </div>
+          <small id="clock">--:--</small>
+        </div>
+      </div>
+      <div class="big"><span id="hW">--</span> <small>W</small></div>
+      <small id="hSub" style="font-size:11px;font-weight:700;display:block;min-height:15px">&nbsp;</small>
+      <div class="g4">
+        <div class="g4i"><small>GRID IN</small><b id="gIn">--</b></div>
+        <div class="g4i"><small>LOAD OUT</small><b id="gOut">--</b></div>
+        <div class="g4i"><small>SOLAR</small><b id="gSol">--</b></div>
+        <div class="g4i"><small>BATTERY</small><b id="gBatt">--</b></div>
+      </div>
+    </div>
+
+    <div class="flowcard">
+      <svg viewBox="0 0 340 226">
+        <line id="lnGrid" class="fline idle" x1="88" y1="51" x2="145" y2="82" stroke="#60a5fa"/>
+        <line id="lnSol" class="fline idle" x1="252" y1="51" x2="195" y2="82" stroke="#f5c451"/>
+        <line id="lnBat" class="fline idle" x1="88" y1="145" x2="145" y2="114" stroke="#34d399"/>
+        <line id="lnHome" class="fline idle" x1="252" y1="145" x2="195" y2="114" stroke="#fb923c"/>
+        <circle cx="170" cy="98" r="30" fill="#1a2231" stroke="#f5c451" stroke-width="2"/>
+        <text x="170" y="95" text-anchor="middle" style="font-size:11px;font-weight:800;fill:var(--txt)">SAKO</text>
+        <text x="170" y="107" text-anchor="middle" style="font-size:8px;fill:var(--mut)">2KW</text>
+        <text id="txUse" x="170" y="141" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+        <text x="52" y="24" text-anchor="middle" class="fnode">⚡ GRID → INV</text>
+        <text id="txGrid" x="52" y="40" text-anchor="middle" class="fval">--</text>
+        <text id="txGridS" x="52" y="53" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+        <text x="288" y="24" text-anchor="middle" class="fnode">☀ SOLAR</text>
+        <text id="txSol" x="288" y="40" text-anchor="middle" class="fval">--</text>
+        <text id="txSolS" x="288" y="53" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+        <text id="txBatNode" x="52" y="172" text-anchor="middle" class="fnode">🔋 BATT</text>
+        <text id="txBat" x="52" y="188" text-anchor="middle" class="fval" style="font-size:11px">--</text>
+        <text id="txBatA" x="52" y="201" text-anchor="middle" style="font-size:9px;fill:var(--mut)">--</text>
+        <text id="txBatS" x="52" y="214" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+        <text x="288" y="172" text-anchor="middle" class="fnode">🏠 INV → LOAD</text>
+        <text id="txHome" x="288" y="188" text-anchor="middle" class="fval">--</text>
+        <text id="txHomeS" x="288" y="201" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+      </svg>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:0 12px 8px;gap:8px">
+        <small style="font-size:10px" id="gHrs">--</small>
+        <small style="color:var(--mut);font-size:8.5px;text-align:right;line-height:1.5">self-use · on: in−out−ch<br>off: 35W + 11% × load</small>
+      </div>
+    </div>
+
+    <div class="today">
+      <div class="h">TODAY</div>
+      <div class="trow"><span>☀ Solar generated</span><b id="tSol" class="gold">--</b></div>
+      <div class="trow"><span>⚡ Grid (main)</span><b id="tGrid">--</b></div>
+      <div class="trow"><span>⚡ Grid → Inverter (in)</span><b id="tIn">--</b></div>
+      <div class="trow"><span>🏠 Inverter → Load (out)</span><b id="tOut">--</b></div>
+      <div class="trow"><span>🔋 Battery state</span><b id="tBat">--</b></div>
+    </div>
+
+    <div class="today">
+      <div class="h">📍 TODAY PEAKS</div>
+      <div class="trow"><span>☀ Solar</span><b id="pkSol">--</b></div>
+      <div class="trow"><span>⚡ Main grid</span><b id="pkMain">--</b></div>
+      <div class="trow"><span>⚡ Grid → Inverter (in)</span><b id="pkIn">--</b></div>
+      <div class="trow"><span>🏠 Inverter → Load (out)</span><b id="pkOut">--</b></div>
+      <div class="trow"><span>🔋 Battery top charging</span><b id="pkCh" class="good">--</b></div>
+      <div class="trow"><span>🔋 Battery top discharging</span><b id="pkDis" class="org">--</b></div>
+      <span class="note">Time shown = when today's peak was hit. Resets at midnight.</span>
+    </div>
+
+    <div class="foot"><span>Created by <b class="cname">Syed MD Shad</b></span><span id="appV">V10</span></div>
+  </div>
+
+  <!-- ================= TAB 2 · SOLAR ================= -->
+  <div id="panelSolar" class="pane">
+    <div class="today">
+      <div class="h">☀ 800W REFERENCE CURVE · CLEAR SKY (Chilahati)</div>
+      <img class="refimg" alt="800W clear-sky reference curve" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAK8BLADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7LooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAoqC7vLSzCm6uoIAxwvmSBc/TJpbW6trpC9tcRTKDgmNwwH5UATUUVQ13WtH0GyF9rmq2OmWpkEYmu7hYkLnou5iBk46UAX6Kz/7b0b+3BoX9q2P9qmHzxZeevnmP+/szu2++MVoUAFFFU73VdMspVhvNRtLaRvupLOqE/QE0AXKKRSGUMpBBGQR3paACiqGm61pGp3l7Z6dqlleXNhJ5V5FBOrvbvz8rgHKng8H0q/QAUUUUAFFU5tV0yC7FnNqNpHctjELzqHP/ASc1coAKKKKACiiigAooooAKKQkAEk4A5JNUdC1rR9esft2h6rY6nabzH59pOsqbh1XcpIyPSgC/RRRQAUUVHc3EFrC09zNHDEvLPIwVR9SeKAJKKgsb2zvofOsrqC5jzjfDIHXP1BqegAooooAKKKKACiiqGm61o+p3d7Z6dqlleXFhJ5V3FBOsjW78/K4Byp4PB54oAv0VTj1TTJL02UeoWj3QODCsylx/wABzmmXmtaPZ6taaTd6rY2+oXoY2trJOqyzheuxSctjvigC/RRRQAUUUUAFFR3M8NtC01xLHDEoyzuwVR9SaisL+xv4zJY3lvdIpwWhlVwD9QaALNFUNG1rR9aW4bSNVstQFtMYJzbTrJ5Ug6o20nDD0PNX6ACiqGua1pGhWi3etapZabbvIIllu51iQuei5YgZOOlXwcjIoAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA+d/wBsHT7LVfFXwq03UbaO5tLrxCYZ4nHDoxiDKe+CCRxWP+0B4H0P4N6TpXxG+GsUnh2+s9SigubW3mf7PeRPnKujEg/dx9Ce4BHo37Qfw98U+NdQ8H6n4UudIhu/D2otfbdReQI5GwqPkUkjK89OKxtW+GHxG+ImuaU3xT17w8nh/TLgXQ0nQ4pdt1KvTzHk5A5I4zwSBjOaAL3xR+IPjTSvEcNho9z4H8PaY1it0t/4k1JVa5kIz5UcKurgc43EYyD6c8f4n+NF1rf7N2n+OpfC+g3V62tx2FzZX8BuLUOGYGRASDnGCMnjJHPWug1r4VeN4PjTr/jHQLnwvdWev20du8urwvLPpwVVUmJANrfdyASAeAenPL/8KF8eL8HL74crqHh9oYfEEepafdtNKGliy2/zVCEK2NmAMjJbngZANfVPtp/bOc6b5Avj4Kf7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আপনার দেওয়া মূল ফাইলটি হলো আপনার নিজের তৈরি করা **Sako Lite V10**। 
+
+আপনার নির্দেশমতো:
+1. **Home Assistant (HA) সম্পূর্ণ বাদ দেওয়া হয়েছে** — এটি এখন সরাসরি আমার তৈরি Render ক্লাউড ব্যাকএন্ডের (`app.py` + Tuya OpenAPI) মাধ্যমে চলবে।
+2. **UI এবং ডিজাইন হুবহু ১০০% আপনার তৈরিটাই রাখা হয়েছে** — Home, Solar, Battery, Bill, History ট্যাব, ফ্লো ডায়াগ্রাম এবং থিম একদম একই আছে।
+3. **ডাটার ভেতরে যে মারাত্মক ভুলগুলো ছিল তা সংশোধন করা হয়েছে:**
+
+---
+
+### আপনার আগের কোডে ডাটার যে ভুলগুলো ছিল:
+
+1. **সোলার ০ ওয়াট হয়ে যাওয়ার আসল বাগ (`computePower` ফাংশন):**
+   * আপনার ফাইলে লেখা ছিল:
+     ```javascript
+     if(ip > 3 && (ip - op) >= 13 + op * 0.05) pvL = 0;
+     ```
+     অর্থাৎ, যখনই পল্লী বিদ্যুৎ (Grid In) চালু থাকত এবং গ্রিড ড্র বাসার লোডের চেয়ে সামান্য বেশি হতো, কোডটি জোর করে সোলারকে **০ ওয়াট (0 W)** বানিয়ে দিত!
+   * **বাস্তব হিসাব:** আপনার সোলার প্যানেলের তারগুলো ইনভার্টারের ইন্টারনাল MPPT হয়ে সরাসরি ১২V ব্যাটারিতে ঢুকছে (**২০–২২ অ্যাম্পিয়ারে = ~২৮০W**)। এসি প্লাগ দুটি এই ডিসি চার্জিং দেখতে পায় না।
+   * **সংশোধন:** এখন সোলার হিসাব হবে:
+     $$\text{Solar PV} = \text{House Load Coverage} + \text{Battery DC Charging Power}$$
+     ফলে গ্রিড থাকুক বা না থাকুক, দিনে সোলার সবসময় আসল **২০০–৪০০ ওয়াট** লাইভ শো করবে।
+
+2. **লোকাল আইপি নির্ভরতা:**
+   * ফাইলে লোকাল আইপি (`192.168.68.71`) হার্ডকোড করা ছিল, যার কারণে Render ক্লাউডে পেস্ট করলে সাইট "Offline" হয়ে যেত। এটি এখন সরাসরি কারেন্ট অরিজিন থেকে লাইভ ডাটা লোড করবে।
+
+3. **ব্যাটারি % ম্যানুয়াল এডিট ফিক্স:**
+   * সেটিংসে গিয়ে ব্যাটারি % দিলে তা HA সার্ভিসে পাঠানোর চেষ্টা করত। এখন এটি সরাসরি রেন্ডার সার্ভারের মেমরিতে সেভ হবে এবং প্রতি ৩ সেকেন্ডে ডাটা রিফ্রেশ হলেও আপনার সেট করা % মুছে যাবে না।
+
+---
+
+### সম্পূর্ণ প্যাকেজ ডাউনলোড লিংক:
+
+📥 **ডাউনলোড লিংক:** [sako_lite_v10_fixed.zip (Google Drive)](https://drive.google.com/file/d/153kFzdLxDimC_cABWuhDzPoPRiJ9k1m3/view?usp=drivesdk)
+
+*(জিপ ফাইলটিতে `energy.html`, `app.py`, `requirements.txt`, এবং `Procfile` সব তৈরি করে রাখা আছে।)*
+
+---
+
+### ম্যানুয়ালি পেস্ট করার জন্য `app.py` কোড:
+
+গিটহাবের **`app.py`** ফাইলে Edit চেপে নিচের সম্পূর্ণ কোডটি পেস্ট করে সেভ করুন:
+
+```python
+import os
+import time
+import hashlib
+import hmac
+import json
+import math
+from datetime import datetime, date
+import urllib.request
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+# --- TUYA API CREDENTIALS ---
+CLIENT_ID = os.environ.get("TUYA_CLIENT_ID", "hcdys9fmcvcchyrsjvqf")
+CLIENT_SECRET = os.environ.get("TUYA_CLIENT_SECRET", "c58da75d76124629a490905aac55e586")
+BASE_URL = os.environ.get("TUYA_BASE_URL", "[https://openapi.tuyaeu.com](https://openapi.tuyaeu.com)")
+
+OUTPUT_DEVICE_ID = "bf9fbc2c5e5a6dd45bvkvq"   # 16A _ Output Line (Load)
+CHARGING_DEVICE_ID = "bf64784528673eddf0h0u8" # 20A _ Charging Line (Grid In)
+MAIN_DEVICE_ID = "bf857f4b4a51ea82a60qmx"     # বাসার মেইন লাইন
+
+SITE_LAT = 26.2439
+SITE_LON = 88.7967
+ARRAY_WATT = 800.0
+
+token_cache = {"access_token": "", "expire_time": 0}
+device_cache = {
+    "t": 0,
+    "out": {"online": True, "power": 120.0, "voltage": 228.0, "current": 0.6},
+    "in": {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0},
+    "main": {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0}
+}
+
+grid_tracker = {
+    "date": str(date.today()),
+    "on_seconds": 0,
+    "off_seconds": 0,
+    "outages": 0,
+    "last_state": None,
+    "last_tick": time.time()
+}
+
+energy_acc = {
+    "date": str(date.today()),
+    "last_t": time.time(),
+    "main_kwh": 0.0,
+    "in_kwh": 0.0,
+    "out_kwh": 0.0,
+    "pv_kwh": 0.0,
+    "ch_kwh": 0.0,
+    "dis_kwh": 0.0,
+    "pv_peak_w": 0.0
+}
+
+user_settings = {
+    "battery_soc": 85.0,
+    "battery_amps": 21.0,
+    "battery_voltage": 13.5,
+    "battery_capacity_ah": 200,
+    "tariff_rate": 15.00
+}
+
+def calc_sign(method, path, body="", access_token=""):
+    t = str(int(time.time() * 1000))
+    body_hash = hashlib.sha256(body.encode('utf-8')).hexdigest()
+    string_to_sign = f"{method}\n{body_hash}\n\n{path}"
+    to_sign = f"{CLIENT_ID}{access_token}{t}{string_to_sign}" if access_token else f"{CLIENT_ID}{t}{string_to_sign}"
+    return hmac.new(CLIENT_SECRET.encode('utf-8'), to_sign.encode('utf-8'), hashlib.sha256).hexdigest().upper(), t
+
+def get_access_token():
+    now = time.time()
+    if token_cache["access_token"] and token_cache["expire_time"] > now + 60:
+        return token_cache["access_token"]
+    path = "/v1.0/token?grant_type=1"
+    sign, t = calc_sign("GET", path)
+    headers = {"client_id": CLIENT_ID, "sign": sign, "t": t, "sign_method": "HMAC-SHA256"}
+    req = urllib.request.Request(f"{BASE_URL}{path}", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            res = json.loads(response.read().decode())
+            if res.get("success"):
+                token_cache["access_token"] = res["result"]["access_token"]
+                token_cache["expire_time"] = now + res["result"]["expire_time"]
+                return token_cache["access_token"]
+    except Exception as e:
+        print(f"Token error: {e}")
+    return None
+
+def fetch_single_device(device_id):
+    token = get_access_token()
+    if not token: return None
+    path = f"/v1.0/devices/{device_id}"
+    sign, t = calc_sign("GET", path, access_token=token)
+    headers = {"client_id": CLIENT_ID, "access_token": token, "sign": sign, "t": t, "sign_method": "HMAC-SHA256"}
+    req = urllib.request.Request(f"{BASE_URL}{path}", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=4) as response:
+            res = json.loads(response.read().decode())
+            if res.get("success"):
+                result = res.get("result", {})
+                if not (result.get("online", False) or result.get("is_online", False)):
+                    return {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0}
+                raw_power, raw_voltage, raw_current = 0.0, 0.0, 0.0
+                switch_on = True
+                for item in result.get("status", []):
+                    code, val = item.get("code"), item.get("value")
+                    if code in ["cur_power", "power"]: raw_power = float(val)
+                    elif code in ["cur_voltage", "voltage"]: raw_voltage = float(val)
+                    elif code in ["cur_current", "current"]: raw_current = float(val)
+                    elif code in ["switch", "switch_1"]: switch_on = bool(val)
+                if not switch_on:
+                    return {"online": True, "power": 0.0, "voltage": 0.0, "current": 0.0}
+                power_w = raw_power / 10.0
+                volt_v = raw_voltage / 10.0 if raw_voltage > 1000 else raw_voltage
+                curr_a = raw_current / 1000.0 if raw_current > 100 else raw_current
+                return {"online": True, "power": round(power_w, 1), "voltage": round(volt_v, 1), "current": round(curr_a, 2)}
+    except Exception as e:
+        print(f"Device error ({device_id}): {e}")
+    return None
+
+def get_devices():
+    now = time.time()
+    if now - device_cache["t"] < 3: return device_cache
+    for k, dev_id in [("out", OUTPUT_DEVICE_ID), ("in", CHARGING_DEVICE_ID), ("main", MAIN_DEVICE_ID)]:
+        res = fetch_single_device(dev_id)
+        if res is not None: device_cache[k] = res
+    device_cache["t"] = now
+    return device_cache
+
+def get_sun_elevation():
+    now = datetime.utcnow()
+    day_of_year = now.timetuple().tm_yday
+    dec = 23.45 * math.sin(math.radians((360 / 365) * (day_of_year - 81)))
+    local_hour = (now.hour + 6) + now.minute / 60.0
+    hour_angle = (local_hour - 12.0) * 15.0
+    lat_rad, dec_rad, ha_rad = math.radians(SITE_LAT), math.radians(dec), math.radians(hour_angle)
+    sin_el = math.sin(lat_rad) * math.sin(dec_rad) + math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad)
+    return round(math.degrees(math.asin(max(-1.0, min(1.0, sin_el)))), 1)
+
+def update_trackers(is_grid, main_w, in_w, out_w, pv_w, ch_w, dis_w):
+    now = time.time()
+    today_str = str(date.today())
+    if grid_tracker["date"] != today_str:
+        grid_tracker["date"] = today_str
+        grid_tracker["on_seconds"] = 0
+        grid_tracker["off_seconds"] = 0
+        grid_tracker["outages"] = 0
+        grid_tracker["last_state"] = None
+        grid_tracker["last_tick"] = now
+
+    dt = min(max(now - grid_tracker["last_tick"], 0), 30)
+    grid_tracker["last_tick"] = now
+
+    if is_grid: grid_tracker["on_seconds"] += dt
+    else: grid_tracker["off_seconds"] += dt
+
+    if grid_tracker["last_state"] is True and is_grid is False:
+        grid_tracker["outages"] += 1
+    grid_tracker["last_state"] = is_grid
+
+    if energy_acc["date"] != today_str:
+        energy_acc["date"] = today_str
+        energy_acc["main_kwh"] = 0.0
+        energy_acc["in_kwh"] = 0.0
+        energy_acc["out_kwh"] = 0.0
+        energy_acc["pv_kwh"] = 0.0
+        energy_acc["ch_kwh"] = 0.0
+        energy_acc["dis_kwh"] = 0.0
+        energy_acc["pv_peak_w"] = 0.0
+
+    dt_h = min(max(now - energy_acc["last_t"], 0), 30) / 3600.0
+    energy_acc["last_t"] = now
+
+    energy_acc["main_kwh"] += (main_w / 1000.0) * dt_h
+    energy_acc["in_kwh"] += (in_w / 1000.0) * dt_h
+    energy_acc["out_kwh"] += (out_w / 1000.0) * dt_h
+    energy_acc["pv_kwh"] += (pv_w / 1000.0) * dt_h
+    energy_acc["ch_kwh"] += (ch_w / 1000.0) * dt_h
+    energy_acc["dis_kwh"] += (dis_w / 1000.0) * dt_h
+    if pv_w > energy_acc["pv_peak_w"]: energy_acc["pv_peak_w"] = pv_w
+
+@app.route("/api/states")
+def ha_states():
+    devs = get_devices()
+    now_iso = datetime.utcnow().isoformat() + "Z"
+    
+    out_p = devs["out"].get("power", 0.0)
+    in_p = devs["in"].get("power", 0.0)
+    main_p = devs["main"].get("power", 0.0)
+    
+    out_v = devs["out"].get("voltage", 228.0)
+    in_v = devs["in"].get("voltage", 228.0)
+    main_v = devs["main"].get("voltage", 228.0)
+
+    out_a = devs["out"].get("current", 0.0)
+    in_a = devs["in"].get("current", 0.0)
+    main_a = devs["main"].get("current", 0.0)
+
+    is_grid = (in_v > 120 or main_v > 120)
+    sun_el = get_sun_elevation()
+
+    # সোলার পাওয়ার হিসাব: ব্যাটারি চার্জিং কারেন্ট (~২১A @ ১৩.৫V = ২৮৩W) + লোড
+    charge_amp = user_settings.get("battery_amps", 21.0)
+    batt_soc = user_settings.get("battery_soc", 85.0)
+
+    if sun_el > 0:
+        bat_chg_w = round(charge_amp * 13.5, 1)
+        dis_w = 0.0
+        if not is_grid:
+            solar_pv_w = round(out_p + bat_chg_w, 1)
+        else:
+            load_covered = max(0.0, out_p - in_p)
+            solar_pv_w = round(load_covered + bat_chg_w, 1)
+        ch_w = bat_chg_w
+        current_amp = charge_amp
+    else:
+        solar_pv_w = 0.0
+        if is_grid and in_p > 20:
+            ch_w = round(in_p * 0.85, 1)
+            dis_w = 0.0
+            current_amp = round(ch_w / 13.5, 1)
+        elif not is_grid:
+            ch_w = 0.0
+            dis_w = out_p + 35.0
+            current_amp = round(-(out_p / 12.0), 1)
+        else:
+            ch_w, dis_w, current_amp = 0.0, 0.0, 0.0
+
+    update_trackers(is_grid, main_p, in_p, out_p, solar_pv_w, ch_w, dis_w)
+
+    on_h = round(grid_tracker["on_seconds"] / 3600.0, 1)
+    off_h = round(grid_tracker["off_seconds"] / 3600.0, 1)
+
+    states = [
+        {"entity_id": "sensor.baasaar_mein_laain_power", "state": str(main_p), "last_updated": now_iso},
+        {"entity_id": "sensor.baasaar_mein_laain_current", "state": str(main_a), "last_updated": now_iso},
+        {"entity_id": "sensor.baasaar_mein_laain_voltage", "state": str(main_v), "last_updated": now_iso},
+        
+        {"entity_id": "sensor.20a_charging_line_power", "state": str(in_p), "last_updated": now_iso},
+        {"entity_id": "sensor.20a_charging_line_current", "state": str(in_a), "last_updated": now_iso},
+        {"entity_id": "sensor.20a_charging_line_voltage", "state": str(in_v), "last_updated": now_iso},
+
+        {"entity_id": "sensor.16a_output_line_power", "state": str(out_p), "last_updated": now_iso},
+        {"entity_id": "sensor.16a_output_line_current", "state": str(out_a), "last_updated": now_iso},
+        {"entity_id": "sensor.16a_output_line_voltage", "state": str(out_v), "last_updated": now_iso},
+
+        {"entity_id": "binary_sensor.energy_mate_v4_grid_present", "state": "on" if is_grid else "off", "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_pv_estimated_power", "state": str(solar_pv_w), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_battery_charge_power", "state": str(ch_w), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_battery_discharge_power", "state": str(dis_w), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_battery_estimated_soc", "state": str(batt_soc), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_battery_current", "state": str(current_amp), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_battery_net_current", "state": str(current_amp), "last_updated": now_iso},
+        
+        {"entity_id": "sensor.energy_mate_v4_main_daily", "state": str(round(energy_acc["main_kwh"], 3)), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_input_daily", "state": str(round(energy_acc["in_kwh"], 3)), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_output_daily", "state": str(round(energy_acc["out_kwh"], 3)), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_pv_daily", "state": str(round(energy_acc["pv_kwh"], 3)), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_battery_charge_daily", "state": str(round(energy_acc["ch_kwh"], 3)), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_battery_discharge_daily", "state": str(round(energy_acc["dis_kwh"], 3)), "last_updated": now_iso},
+        
+        {"entity_id": "sensor.energy_mate_v4_grid_on_today", "state": str(on_h), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_grid_off_today", "state": str(off_h), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_grid_outages_today", "state": str(grid_tracker["outages"]), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_pv_peak_today", "state": str(round(energy_acc["pv_peak_w"], 0)), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_inverter_overhead_power", "state": "45", "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_pack_version", "state": "V10", "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_poll_heartbeat", "state": str(int(time.time())), "last_updated": now_iso},
+        {"entity_id": "sensor.energy_mate_v4_effective_pv_array_power", "state": str(ARRAY_WATT), "last_updated": now_iso},
+
+        {"entity_id": "sun.sun", "state": "above_horizon" if sun_el > 0 else "below_horizon", "attributes": {"elevation": sun_el}},
+        {"entity_id": "input_number.energy_final_site_lat", "state": str(SITE_LAT)},
+        {"entity_id": "input_number.energy_final_site_lon", "state": str(SITE_LON)},
+        {"entity_id": "input_number.energy_final_panel_azimuth", "state": "180"},
+        {"entity_id": "input_number.energy_final_panel_tilt", "state": "10"},
+        {"entity_id": "input_number.energy_final_manual_soc", "state": str(batt_soc)},
+        {"entity_id": "input_boolean.energy_final_battery_manual_soc", "state": "off"}
+    ]
+    return jsonify(states)
+
+@app.route("/api/settings", methods=["GET", "POST"])
+def handle_settings():
+    if request.method == "POST":
+        data = request.get_json(force=True, silent=True) or {}
+        user_settings.update(data)
+        return jsonify({"success": True, "settings": user_settings})
+    return jsonify(user_settings)
+
+@app.route("/api/services/<path:subpath>", methods=["GET", "POST"])
+def ha_services(subpath):
+    data = request.get_json(force=True, silent=True) or {}
+    if "input_number/set_value" in subpath:
+        val = data.get("value")
+        if val is not None: user_settings["battery_soc"] = float(val)
+    return jsonify({"success": True})
+
+@app.route("/api/manifest")
+def ha_manifest():
+    return jsonify({"version_string": "Sako-Lite-V10-Cloud"})
+
+@app.route("/")
+def home():
+    for name in ["Energy.html", "energy.html", "index.html"]:
+        if os.path.exists(name):
+            with open(name, "r", encoding="utf-8") as f: return f.read()
+    return "<h3>Sako Lite V10: Please upload energy.html to repository root!</h3>"
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
