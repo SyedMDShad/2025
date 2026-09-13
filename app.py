@@ -6,7 +6,7 @@ import os
 import math
 from datetime import datetime
 import urllib.request
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
@@ -20,7 +20,13 @@ OUTPUT_DEVICE_ID = "bf9fbc2c5e5a6dd45bvkvq"   # 16A _ Output Line (Load)
 CHARGING_DEVICE_ID = "bf64784528673eddf0h0u8" # 20A _ Charging Line (Grid In)
 MAIN_DEVICE_ID = "bf857f4b4a51ea82a60qmx"     # বাসার মেইন লাইন।
 
+# --- SITE: KHANKA SHORIF, CHILAHATI, DOMAR, NILPHAMARI ---
+SITE_LAT = 26.2439
+SITE_LON = 88.7967
+ARRAY_WATT = 800.0 # 2x REC 400W
+
 token_cache = {"access_token": "", "expire_time": 0}
+weather_cache = {"t": 0, "factor": 1.0, "code": 0, "rain": 0.0, "temp": 28.0, "cloud": 0}
 
 def calc_sign(method, path, body="", access_token=""):
     t = str(int(time.time() * 1000))
@@ -39,7 +45,7 @@ def get_access_token():
     headers = {"client_id": CLIENT_ID, "sign": sign, "t": t, "sign_method": "HMAC-SHA256"}
     req = urllib.request.Request(f"{BASE_URL}{path}", headers=headers)
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=5) as response:
             res = json.loads(response.read().decode())
             if res.get("success"):
                 token_cache["access_token"] = res["result"]["access_token"]
@@ -87,7 +93,7 @@ def get_device_data(device_id):
         print(f"Device error ({device_id}): {e}")
     return {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0}
 
-def get_sun_elevation(lat=26.2439, lon=88.7967):
+def get_sun_elevation(lat=SITE_LAT, lon=SITE_LON):
     now = datetime.utcnow()
     day_of_year = now.timetuple().tm_yday
     dec = 23.45 * math.sin(math.radians((360 / 365) * (day_of_year - 81)))
@@ -97,7 +103,44 @@ def get_sun_elevation(lat=26.2439, lon=88.7967):
     sin_el = math.sin(lat_rad) * math.sin(dec_rad) + math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad)
     return round(math.degrees(math.asin(max(-1.0, min(1.0, sin_el)))), 1)
 
-# --- HOME ASSISTANT EMULATION ENDPOINTS (SERVES SAKO LITE V10) ---
+# লাইভ বৃষ্টি ও ক্লাউড ডাটা ফেচিং (চিলাহাটি)
+def get_live_weather():
+    now = time.time()
+    if now - weather_cache["t"] < 600:
+        return weather_cache
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={SITE_LAT}&longitude={SITE_LON}&current=temperature_2m,relative_humidity_2m,weather_code,cloud_cover,precipitation&timezone=Asia%2FDhaka"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+            curr = data.get("current", {})
+            code = curr.get("weather_code", 0)
+            cloud = curr.get("cloud_cover", 0)
+            rain = curr.get("precipitation", 0.0)
+            
+            # WMO রেইন/ক্লাউড ফ্যাক্টর হিসাব
+            if code in [95, 96, 99]: f = 0.12     # বজ্রবৃষ্টি
+            elif code in [55, 63, 65, 81, 82]: f = 0.18 # ভারী বৃষ্টি
+            elif code in [51, 53, 61, 80]: f = 0.25     # হালকা গুঁড়ি গুঁড়ি বৃষ্টি
+            elif code == 3 or cloud > 85: f = 0.40      # ঘন মেঘলা আকাশ
+            elif code == 2 or cloud > 50: f = 0.70      # আংশিক মেঘলা
+            elif code == 1: f = 0.90
+            else: f = 1.0
+
+            if rain > 0.2:
+                f = min(f, 0.20)
+
+            weather_cache["t"] = now
+            weather_cache["factor"] = f
+            weather_cache["code"] = code
+            weather_cache["rain"] = rain
+            weather_cache["cloud"] = cloud
+            weather_cache["temp"] = curr.get("temperature_2m", 28.0)
+    except Exception as e:
+        print(f"Weather error: {e}")
+    return weather_cache
+
+# --- SAKO LITE V10 API BRIDGE ---
 
 @app.route("/api/states")
 def ha_states():
@@ -112,21 +155,32 @@ def ha_states():
     grid_w = in_data.get("power", 0.0)
     main_w = main_data.get("power", 0.0)
 
-    # সোলার হিসাব
-    if not is_grid or grid_w <= 5:
-        pv_w = load_w
-    else:
-        pv_w = max(0.0, load_w - grid_w * 0.94)
-
-    # ব্যাটারি চার্জ / ডিসচার্জ হিসাব
-    if not is_grid:
-        ch_w = max(0.0, pv_w - load_w / 0.9)
-        dis_w = max(0.0, (load_w / 0.9 + 35.0) - pv_w)
-    else:
-        dis_w = 0.0
-        ch_w = max(0.0, pv_w - load_w / 0.9)
-
     sun_el = get_sun_elevation()
+    wx = get_live_weather()
+
+    # বাস্তব সূর্য কোণ ও বৃষ্টির আলোকে প্রকৃত সোলার ক্ষমতা
+    if sun_el <= 2:
+        weather_potential = 0.0
+    else:
+        sin_el = math.sin(math.radians(sun_el))
+        clear_sky_pot = ARRAY_WATT * sin_el * 0.82
+        weather_potential = clear_sky_pot * wx["factor"]
+
+    # সোলার ও ব্যাটারি নিখুঁত বণ্টন
+    if not is_grid:
+        # গ্রিড ছাড়া: লোড চলবে সোলার + ব্যাটারি মিলিয়ে
+        pv_w = min(load_w, max(0.0, weather_potential))
+        dis_w = max(0.0, (load_w / 0.90 + 35.0) - pv_w)
+        ch_w = 0.0
+    else:
+        # গ্রিড থাকলে
+        if grid_w <= 5:
+            pv_w = min(load_w, max(0.0, weather_potential))
+        else:
+            calc_pv = max(0.0, load_w - grid_w * 0.94)
+            pv_w = min(calc_pv, max(0.0, weather_potential))
+        dis_w = 0.0
+        ch_w = max(0.0, pv_w - load_w / 0.90)
 
     states = [
         {"entity_id": "sensor.baasaar_mein_laain_power", "state": str(main_w), "last_updated": now_iso},
@@ -145,11 +199,11 @@ def ha_states():
         {"entity_id": "sensor.energy_mate_v4_pack_version", "state": "V10-Cloud", "last_updated": now_iso},
         {"entity_id": "sensor.energy_mate_v4_poll_heartbeat", "state": str(int(time.time())), "last_updated": now_iso},
         {"entity_id": "sun.sun", "state": "above_horizon" if sun_el > 0 else "below_horizon", "attributes": {"elevation": sun_el}},
-        {"entity_id": "input_number.energy_final_site_lat", "state": "26.2439"},
-        {"entity_id": "input_number.energy_final_site_lon", "state": "88.7967"},
+        {"entity_id": "input_number.energy_final_site_lat", "state": str(SITE_LAT)},
+        {"entity_id": "input_number.energy_final_site_lon", "state": str(SITE_LON)},
         {"entity_id": "input_number.energy_final_panel_azimuth", "state": "180"},
         {"entity_id": "input_number.energy_final_panel_tilt", "state": "10"},
-        {"entity_id": "sensor.energy_mate_v4_effective_pv_array_power", "state": "800"},
+        {"entity_id": "sensor.energy_mate_v4_effective_pv_array_power", "state": str(ARRAY_WATT)},
     ]
     return jsonify(states)
 
@@ -166,7 +220,6 @@ def index():
     if os.path.exists("energy.html"):
         with open("energy.html", "r", encoding="utf-8") as f:
             html = f.read()
-        # Sako Lite V10 কে সরাসরি এই ক্লাউড সার্ভারের সাথে লিংক করানো
         html = html.replace('const BUNDLED_URL_L="http://192.168.68.71";', 'const BUNDLED_URL_L=window.location.origin;')
         html = html.replace('const BUNDLED_URL_R="https://j6wj3jkik6fnfjkznprustr5dkvxezwi.ui.nabu.casa";', 'const BUNDLED_URL_R=window.location.origin;')
         html = html.replace('const BUNDLED_TOKEN="', 'const BUNDLED_TOKEN="cloud_')
