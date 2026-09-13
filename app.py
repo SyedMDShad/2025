@@ -1,283 +1,55 @@
-import time
-import hashlib
-import hmac
-import json
-import os
-import math
-from datetime import datetime, date
-import urllib.request
-from flask import Flask, jsonify, request
+      # --------------------------------------------------------------------------
+      # 100% Automatic PV Calculation Engine (Fixed Battery DC Charging Bug)
+      # --------------------------------------------------------------------------
+      - name: "Energy Mate PV Estimated Power"
+        unique_id: energy_mate_pv_estimated_power_v6
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% if is_state('sun.sun', 'below_horizon') %}
+            0.0
+          {% else %}
+            {% set grid_on = is_state('binary_sensor.energy_mate_grid_available', 'on') %}
+            {% set inv_in = states('sensor.energy_mate_inverter_input_power') | float(0) %}
+            {% set inv_out = states('sensor.energy_mate_inverter_output_power') | float(0) %}
+            {% set own_use = states('sensor.energy_mate_inverter_own_consumption') | float(45) %}
+            {% set max_array = states('input_number.energy_final_pv_total_watt') | float(800) %}
+            {% set chg_amps = states('input_number.energy_final_battery_max_charge_amps') | float(21.0) %}
+            {% set bat_chg_w = chg_amps * 13.5 %}
+            
+            {% if not grid_on %}
+              {# গ্রিড অফ: লোড + ব্যাটারি চার্জিং = আসল সোলার জেনারেশন #}
+              {% set total_pv = inv_out + bat_chg_w %}
+              {{ [[total_pv, 0] | max, max_array] | min | round(1) }}
+            {% else %}
+              {# গ্রিড অন: লোড কাভার + ব্যাটারি চার্জিং #}
+              {% set load_covered = [inv_out - inv_in, 0] | max %}
+              {% set total_pv = load_covered + bat_chg_w %}
+              {{ [[total_pv, 0] | max, max_array] | min | round(1) }}
+            {% endif %}
+          {% endif %}
 
-app = Flask(__name__)
-
-# --- TUYA API CREDENTIALS ---
-CLIENT_ID = "hcdys9fmcvcchyrsjvqf"
-CLIENT_SECRET = "c58da75d76124629a490905aac55e586"
-BASE_URL = "https://openapi.tuyaeu.com"
-
-# --- TUYA DEVICE IDS ---
-OUTPUT_DEVICE_ID = "bf9fbc2c5e5a6dd45bvkvq"   # 16A _ Output Line (Load)
-CHARGING_DEVICE_ID = "bf64784528673eddf0h0u8" # 20A _ Charging Line (Grid In)
-MAIN_DEVICE_ID = "bf857f4b4a51ea82a60qmx"     # বাসার মেইন লাইন
-
-SITE_LAT = 26.3110
-SITE_LON = 88.7840
-
-token_cache = {"access_token": "", "expire_time": 0}
-
-device_cache = {
-    "t": 0,
-    "out": {"online": True, "power": 120.0, "voltage": 228.0, "current": 0.6},
-    "in": {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0},
-    "main": {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0}
-}
-
-grid_tracker = {
-    "date": str(date.today()),
-    "on_seconds": 0,
-    "off_seconds": 0,
-    "outages": 0,
-    "last_state": None,
-    "last_tick": time.time()
-}
-
-server_settings = {
-    "battSoc": 85.0,
-    "batteryAmps": 21.0,
-    "batteryCapacity": 200.0,
-    "solarWatts": 800.0,
-    "tariff": 15.0
-}
-
-def calc_sign(method, path, body="", access_token=""):
-    t = str(int(time.time() * 1000))
-    body_hash = hashlib.sha256(body.encode('utf-8')).hexdigest()
-    string_to_sign = f"{method}\n{body_hash}\n\n{path}"
-    to_sign = f"{CLIENT_ID}{access_token}{t}{string_to_sign}" if access_token else f"{CLIENT_ID}{t}{string_to_sign}"
-    sign = hmac.new(CLIENT_SECRET.encode('utf-8'), to_sign.encode('utf-8'), hashlib.sha256).hexdigest().upper()
-    return sign, t
-
-def get_access_token():
-    now = time.time()
-    if token_cache["access_token"] and token_cache["expire_time"] > now + 60:
-        return token_cache["access_token"]
-    path = "/v1.0/token?grant_type=1"
-    sign, t = calc_sign("GET", path)
-    headers = {"client_id": CLIENT_ID, "sign": sign, "t": t, "sign_method": "HMAC-SHA256"}
-    req = urllib.request.Request(f"{BASE_URL}{path}", headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=5) as response:
-            res = json.loads(response.read().decode())
-            if res.get("success"):
-                token_cache["access_token"] = res["result"]["access_token"]
-                token_cache["expire_time"] = now + res["result"]["expire_time"]
-                return token_cache["access_token"]
-    except Exception as e:
-        print(f"Token error: {e}")
-    return None
-
-def fetch_single_device(device_id):
-    token = get_access_token()
-    if not token:
-        return None
-    path = f"/v1.0/devices/{device_id}"
-    sign, t = calc_sign("GET", path, access_token=token)
-    headers = {"client_id": CLIENT_ID, "access_token": token, "sign": sign, "t": t, "sign_method": "HMAC-SHA256"}
-    req = urllib.request.Request(f"{BASE_URL}{path}", headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=4) as response:
-            res = json.loads(response.read().decode())
-            if res.get("success"):
-                result = res.get("result", {})
-                is_online = result.get("online", False) or result.get("is_online", False)
-                if not is_online:
-                    return {"online": False, "power": 0.0, "voltage": 0.0, "current": 0.0}
-                
-                status_list = result.get("status", [])
-                raw_power, raw_voltage, raw_current = 0.0, 0.0, 0.0
-                switch_on = True
-                for item in status_list:
-                    code, val = item.get("code"), item.get("value")
-                    if code in ["cur_power", "power"]: raw_power = float(val)
-                    elif code in ["cur_voltage", "voltage"]: raw_voltage = float(val)
-                    elif code in ["cur_current", "current"]: raw_current = float(val)
-                    elif code in ["switch", "switch_1"]: switch_on = bool(val)
-                
-                if not switch_on:
-                    return {"online": True, "power": 0.0, "voltage": 0.0, "current": 0.0}
-                
-                power_w = raw_power / 10.0
-                volt_v = raw_voltage / 10.0 if raw_voltage > 1000 else raw_voltage
-                curr_a = raw_current / 1000.0 if raw_current > 100 else raw_current
-                return {"online": True, "power": round(power_w, 1), "voltage": round(volt_v, 1), "current": round(curr_a, 2)}
-    except Exception as e:
-        print(f"Device error ({device_id}): {e}")
-    return None
-
-def get_devices():
-    now = time.time()
-    if now - device_cache["t"] < 3:
-        return device_cache
-    
-    out_d = fetch_single_device(OUTPUT_DEVICE_ID)
-    if out_d is not None: device_cache["out"] = out_d
-
-    in_d = fetch_single_device(CHARGING_DEVICE_ID)
-    if in_d is not None: device_cache["in"] = in_d
-
-    main_d = fetch_single_device(MAIN_DEVICE_ID)
-    if main_d is not None: device_cache["main"] = main_d
-
-    device_cache["t"] = now
-    return device_cache
-
-def get_sun_elevation(lat=SITE_LAT, lon=SITE_LON):
-    now = datetime.utcnow()
-    day_of_year = now.timetuple().tm_yday
-    dec = 23.45 * math.sin(math.radians((360 / 365) * (day_of_year - 81)))
-    local_hour = (now.hour + 6) + now.minute / 60.0
-    hour_angle = (local_hour - 12.0) * 15.0
-    lat_rad, dec_rad, ha_rad = math.radians(lat), math.radians(dec), math.radians(hour_angle)
-    sin_el = math.sin(lat_rad) * math.sin(dec_rad) + math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad)
-    return round(math.degrees(math.asin(max(-1.0, min(1.0, sin_el)))), 1)
-
-def update_grid_tracker(is_grid):
-    now = time.time()
-    today_str = str(date.today())
-    if grid_tracker["date"] != today_str:
-        grid_tracker["date"] = today_str
-        grid_tracker["on_seconds"] = 0
-        grid_tracker["off_seconds"] = 0
-        grid_tracker["outages"] = 0
-        grid_tracker["last_state"] = None
-        grid_tracker["last_tick"] = now
-
-    dt = min(max(now - grid_tracker["last_tick"], 0), 60)
-    grid_tracker["last_tick"] = now
-
-    if is_grid:
-        grid_tracker["on_seconds"] += dt
-    else:
-        grid_tracker["off_seconds"] += dt
-
-    if grid_tracker["last_state"] is True and is_grid is False:
-        grid_tracker["outages"] += 1
-    grid_tracker["last_state"] = is_grid
-
-# --- API ENDPOINTS ---
-
-@app.route("/api/settings", methods=["GET", "POST"])
-def api_settings():
-    global server_settings
-    if request.method == "POST":
-        try:
-            data = request.get_json(force=True, silent=True) or {}
-            for k in server_settings:
-                if k in data:
-                    server_settings[k] = float(data[k])
-            return jsonify({"success": True, "settings": server_settings})
-        except Exception as e:
-            return jsonify({"success": False, "error": str(e)}), 400
-    return jsonify(server_settings)
-
-@app.route("/api/states")
-def ha_states():
-    devs = get_devices()
-    out_data = devs["out"]
-    in_data = devs["in"]
-    main_data = devs["main"]
-
-    now_iso = datetime.utcnow().isoformat() + "Z"
-    
-    is_grid = (in_data.get("voltage", 0) > 120 or main_data.get("voltage", 0) > 120)
-    update_grid_tracker(is_grid)
-
-    load_w = out_data.get("power", 0.0)
-    grid_w = in_data.get("power", 0.0) if is_grid else 0.0
-    main_w = main_data.get("power", 0.0) if is_grid else 0.0
-
-    sun_el = get_sun_elevation()
-
-    charge_amp = server_settings.get("batteryAmps", 21.0)
-    batt_soc = server_settings.get("battSoc", 85.0)
-
-    if sun_el > 0:
-        # দিনের বেলা: সোলার ব্যাটারিতে যাচ্ছে ২১A @ ১৩.৫V = ২৮৩W
-        ch_w = round(charge_amp * 13.5, 1)
-        dis_w = 0.0
-        pv_w = round(load_w + ch_w, 1)
-        batt_amp = charge_amp
-    else:
-        pv_w = 0.0
-        if is_grid and grid_w > 20:
-            ch_w = round(grid_w * 0.85, 1)
-            dis_w = 0.0
-            batt_amp = round(ch_w / 13.5, 1)
-        elif not is_grid:
-            ch_w = 0.0
-            dis_w = load_w
-            batt_amp = round(-(load_w / 12.0), 1)
-        else:
-            ch_w, dis_w, batt_amp = 0.0, 0.0, 0.0
-
-    on_hours = round(grid_tracker["on_seconds"] / 3600.0, 1)
-    off_hours = round(grid_tracker["off_seconds"] / 3600.0, 1)
-
-    states = [
-        # Standard Plug Sensors
-        {"entity_id": "sensor.baasaar_mein_laain_power", "state": str(main_w), "last_updated": now_iso},
-        {"entity_id": "sensor.baasaar_mein_laain_voltage", "state": str(main_data.get("voltage", 228.0)), "last_updated": now_iso},
-        {"entity_id": "sensor.baasaar_mein_laain_current", "state": str(main_data.get("current", 0.0)), "last_updated": now_iso},
-        {"entity_id": "sensor.20a_charging_line_power", "state": str(grid_w), "last_updated": now_iso},
-        {"entity_id": "sensor.20a_charging_line_voltage", "state": str(in_data.get("voltage", 228.0)), "last_updated": now_iso},
-        {"entity_id": "sensor.20a_charging_line_current", "state": str(in_data.get("current", 0.0)), "last_updated": now_iso},
-        {"entity_id": "sensor.16a_output_line_power", "state": str(load_w), "last_updated": now_iso},
-        {"entity_id": "sensor.16a_output_line_voltage", "state": str(out_data.get("voltage", 228.0)), "last_updated": now_iso},
-        {"entity_id": "sensor.16a_output_line_current", "state": str(out_data.get("current", 0.0)), "last_updated": now_iso},
-        {"entity_id": "binary_sensor.energy_mate_v4_grid_present", "state": "on" if is_grid else "off", "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_grid_on_today", "state": str(on_hours), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_grid_off_today", "state": str(off_hours), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_grid_outages_today", "state": str(grid_tracker["outages"]), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_pv_estimated_power", "state": str(round(pv_w, 1)), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_battery_charge_power", "state": str(round(ch_w, 1)), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_battery_discharge_power", "state": str(round(dis_w, 1)), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_battery_soc", "state": str(batt_soc), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_battery_current", "state": str(batt_amp), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_pack_version", "state": "V12-SolarOS-Sync", "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_v4_poll_heartbeat", "state": str(int(time.time())), "last_updated": now_iso},
-        {"entity_id": "sun.sun", "state": "above_horizon" if sun_el > 0 else "below_horizon", "attributes": {"elevation": sun_el}},
-        {"entity_id": "input_number.energy_final_site_lat", "state": str(SITE_LAT)},
-        {"entity_id": "input_number.energy_final_site_lon", "state": str(SITE_LON)},
-        {"entity_id": "sensor.energy_mate_v4_effective_pv_array_power", "state": str(server_settings.get("solarWatts", 800.0))},
-
-        # SAKO SolarOS Ultra Aliases (energy_v6_1 compatibility)
-        {"entity_id": "binary_sensor.energy_mate_grid_available", "state": "on" if is_grid else "off", "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_main_grid_power", "state": str(main_w), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_inverter_input_power", "state": str(grid_w), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_inverter_output_power", "state": str(load_w), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_battery_soc", "state": str(batt_soc), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_battery_net_current", "state": str(batt_amp), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_pv_power", "state": str(round(pv_w, 1)), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_inverter_own_consumption", "state": "45", "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_grid_daily", "state": str(round((grid_w/1000.0)*2.4, 2)), "last_updated": now_iso},
-        {"entity_id": "sensor.energy_mate_pv_daily", "state": str(round((pv_w/1000.0)*3.2, 2)), "last_updated": now_iso}
-    ]
-    return jsonify(states)
-
-@app.route("/api/services/<path:subpath>", methods=["GET", "POST"])
-def ha_services(subpath):
-    return jsonify({"success": True})
-
-@app.route("/api/manifest")
-def ha_manifest():
-    return jsonify({"version_string": "Tuya-Cloud-Live-V12"})
-
-@app.route("/")
-def index():
-    if os.path.exists("energy.html"):
-        with open("energy.html", "r", encoding="utf-8") as f:
-            return f.read()
-    return "<h3>Please upload energy.html to your GitHub repository root!</h3>"
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+      # --------------------------------------------------------------------------
+      # Battery Live Current (Now reflects 20-22A real solar charging)
+      # --------------------------------------------------------------------------
+      - name: "Energy Mate Battery Net Current"
+        unique_id: energy_mate_battery_net_current_v6
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {% set sun_up = not is_state('sun.sun', 'below_horizon') %}
+          {% set grid_on = is_state('binary_sensor.energy_mate_grid_available', 'on') %}
+          {% set inv_out = states('sensor.energy_mate_inverter_output_power') | float(0) %}
+          {% set chg_amps = states('input_number.energy_final_battery_max_charge_amps') | float(21.0) %}
+          
+          {% if sun_up %}
+            {# দিনের বেলায় সোলার থেকে ব্যাটারিতে চার্জিং ঢুকছে #}
+            {{ chg_amps | round(1) }}
+          {% elif not grid_on %}
+            {# রাতে লোডশেডিংয়ে ডিসচার্জিং #}
+            {{ (- (inv_out / 12.0)) | round(1) }}
+          {% else %}
+            0.0
+          {% endif %}
