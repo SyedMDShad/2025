@@ -43,7 +43,6 @@
     .header-status { display: flex; align-items: center; gap: 8px; background: rgba(14, 23, 42, 0.8); border: 1px solid var(--card-border); padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; }
     .dot-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--battery); box-shadow: 0 0 8px var(--battery); animation: pulse 2s infinite ease-in-out; }
     .dot-indicator.offline { background: var(--battery-red); animation: none; }
-    .dot-indicator.sim { background: var(--solar); animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } }
 
     .container { max-width: 580px; margin: 0 auto; padding: 12px 14px; }
@@ -82,7 +81,6 @@
     .nav-link { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); background: none; border: none; cursor: pointer; font-size: 0.7rem; font-weight: 600; }
     .nav-link.active, .nav-link:hover { color: var(--cyan); }
 
-    /* Modal */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
     .modal-box { background: #0f172a; border: 1px solid var(--cyan); border-radius: 22px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; padding: 22px; }
     .modal-tabs { display: flex; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 14px; }
@@ -112,7 +110,7 @@
         <span class="brand-sub">E-SUN 2KVA Hybrid + REC 800W Array</span>
       </div>
     </div>
-    <div class="header-status" onclick="openConfigModal('ha')">
+    <div class="header-status" onclick="openConfigModal('battery')">
       <div class="dot-indicator" id="liveDot"></div>
       <span id="connLabel" style="font-family: var(--font-mono); font-weight: 700;">Live Connected</span>
     </div>
@@ -217,7 +215,7 @@
         <div class="form-group">
           <label style="display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
             <input type="checkbox" id="cfgLockSoc" checked style="accent-color:var(--cyan);">
-            <span>Lock Manual SOC (HA-এর অটো ওভাররাইড ব্লক রাখুন)</span>
+            <span>Lock Manual SOC (স্বয়ংক্রিয় পরিবর্তন ব্লক রাখুন)</span>
           </label>
         </div>
       </div>
@@ -288,7 +286,7 @@
       constructor(path, color, speed) { this.path = path; this.color = color; this.speed = speed; this.progress = Math.random(); }
       update() { this.progress += this.speed; if (this.progress >= 1) this.progress = 0; }
       draw(ctx) {
-        const p0 = this.path[0], p1 = this.path[1];
+        const p0 = this.path[0], p1 = this.path;
         const x = p0.x + (p1.x - p0.x) * this.progress, y = p0.y + (p1.y - p0.y) * this.progress;
         ctx.save(); ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI * 2);
         ctx.fillStyle = this.color; ctx.shadowColor = this.color; ctx.shadowBlur = 10; ctx.fill(); ctx.restore();
@@ -300,4 +298,159 @@
       particles = [];
       const n = getNodes();
       if (system.pvPower > 15) {
-        for 
+        for (let i = 0; i < 6; i++) particles.push(new Particle([n.pv, n.inverter], n.pv.color, 0.01));
+      }
+      if (system.inverterOutputPower > 15) {
+        for (let i = 0; i < 5; i++) particles.push(new Particle([n.inverter, n.load], n.load.color, 0.01));
+      }
+      if (system.batteryAmps > 0.5) {
+        for (let i = 0; i < 5; i++) particles.push(new Particle([n.inverter, n.battery], "#10b981", 0.009));
+      } else if (system.batteryAmps < -0.5) {
+        for (let i = 0; i < 5; i++) particles.push(new Particle([n.battery, n.inverter], "#ef4444", 0.009));
+      }
+    }
+
+    function renderAnimation() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const n = getNodes();
+      const tracks = [[n.pv, n.inverter], [n.grid, n.inverter], [n.inverter, n.load], [n.inverter, n.battery]];
+      ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+      tracks.forEach(([p0, p1]) => { ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke(); });
+
+      ctx.beginPath(); ctx.arc(n.inverter.x, n.inverter.y, 24, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0, 242, 254, 0.12)"; ctx.strokeStyle = "var(--cyan)"; ctx.lineWidth = 2; ctx.fill(); ctx.stroke();
+
+      particles.forEach(p => { p.update(); p.draw(ctx); });
+      requestAnimationFrame(renderAnimation);
+    }
+    rebuildParticles();
+    renderAnimation();
+
+    function updateDashboardUI() {
+      const batChargePower = Math.max(0, system.batteryAmps * system.batteryVoltage);
+      const acSolarLoad = Math.max(0, system.inverterOutputPower - (system.gridOnline ? (system.inverterInputPower * 0.94) : 0));
+      system.pvPower = Math.round(acSolarLoad + batChargePower);
+
+      document.getElementById("badgePvVal").innerText = Math.round(system.pvPower) + " W";
+      document.getElementById("badgeGridVal").innerText = (system.gridOnline ? Math.round(system.inverterInputPower) : 0) + " W";
+      document.getElementById("badgeLoadVal").innerText = Math.round(system.inverterOutputPower) + " W";
+      document.getElementById("badgeBatVal").innerText = (system.batteryAmps >= 0 ? "+" : "") + system.batteryAmps.toFixed(1) + " A";
+      document.getElementById("badgeBatVal").style.color = system.batteryAmps >= 0 ? "var(--battery)" : "var(--battery-red)";
+
+      document.getElementById("tilePvW").innerHTML = Math.round(system.pvPower) + ` <small style="font-size:0.85rem;">W</small>`;
+      document.getElementById("tileBatSoc").innerHTML = Math.round(system.batterySoc) + ` <small style="font-size:0.85rem;">%</small>`;
+      document.getElementById("barBatSoc").style.width = Math.min(100, Math.max(5, system.batterySoc)) + "%";
+      document.getElementById("tileBatCurrent").innerText = (system.batteryAmps >= 0 ? "+" : "") + system.batteryAmps.toFixed(1) + " A (Solar Chg)";
+      document.getElementById("tileGridW").innerHTML = (system.gridOnline ? Math.round(system.inverterInputPower) : 0) + ` <small style="font-size:0.85rem;">W</small>`;
+      document.getElementById("tileLoadW").innerHTML = Math.round(system.inverterOutputPower) + ` <small style="font-size:0.85rem;">W</small>`;
+
+      if (system.batteryAmps > 0.5) {
+        const remAh = userSettings.batteryCapacity * Math.max(0, (100 - system.batterySoc) / 100);
+        const timeH = remAh / system.batteryAmps;
+        document.getElementById("statTimeToFull").innerText = system.batterySoc >= 98 ? "Full (Float)" : `~ ${timeH.toFixed(1)} Hours`;
+      }
+    }
+
+    async function pollData() {
+      try {
+        const res = await fetch('/api/states');
+        const states = await res.json();
+        document.getElementById("liveDot").className = "dot-indicator";
+        document.getElementById("connLabel").innerText = "Live Connected";
+
+        const getVal = (id, def = 0) => {
+          const item = states.find(s => s.entity_id === id);
+          return item ? (parseFloat(item.state) || def) : def;
+        };
+
+        system.inverterOutputPower = getVal('sensor.16a_output_line_power', getVal('sensor.energy_mate_inverter_output_power', 120));
+        system.inverterInputPower = getVal('sensor.20a_charging_line_power', getVal('sensor.energy_mate_inverter_input_power', 0));
+        system.gridOnline = (getVal('sensor.20a_charging_line_voltage', 228) > 120);
+
+        if (!userSettings.lockSoc) {
+          system.batterySoc = getVal('sensor.energy_mate_battery_soc', userSettings.manualSoc);
+        } else {
+          system.batterySoc = userSettings.manualSoc;
+        }
+
+        const haAmps = getVal('sensor.energy_mate_battery_net_current', null);
+        if (haAmps !== null && Math.abs(haAmps) > 0.1) {
+          system.batteryAmps = haAmps;
+        } else {
+          system.batteryAmps = userSettings.batteryAmps || 21.0;
+        }
+
+        rebuildParticles();
+        updateDashboardUI();
+      } catch (e) {
+        updateDashboardUI();
+      }
+    }
+
+    function switchModalTab(tabId) {
+      ['battery', 'solar', 'grid'].forEach(t => {
+        document.getElementById("tabBtn_" + t).className = "modal-tab-btn " + (t === tabId ? "active" : "");
+        document.getElementById("tabPane_" + t).className = "tab-pane " + (t === tabId ? "active" : "");
+      });
+    }
+
+    function openConfigModal(tab = "battery") {
+      document.getElementById("cfgSocSlider").value = Math.round(system.batterySoc);
+      document.getElementById("lblSocDisplay").innerText = Math.round(system.batterySoc) + "%";
+      document.getElementById("cfgBatAmps").value = system.batteryAmps.toFixed(1);
+      document.getElementById("cfgBatVolt").value = system.batteryVoltage.toFixed(1);
+      document.getElementById("cfgBatCap").value = userSettings.batteryCapacity || 200;
+      document.getElementById("cfgLockSoc").checked = userSettings.lockSoc;
+      switchModalTab(tab);
+      document.getElementById("configModal").style.display = "flex";
+    }
+
+    function closeConfigModal() { document.getElementById("configModal").style.display = "none"; }
+
+    function onSocSlider(val) {
+      document.getElementById("lblSocDisplay").innerText = val + "%";
+      system.batterySoc = parseFloat(val);
+      updateDashboardUI();
+    }
+
+    function setSocPreset(val) {
+      document.getElementById("cfgSocSlider").value = val;
+      onSocSlider(val);
+    }
+
+    function setBatAmpsPreset(val) {
+      document.getElementById("cfgBatAmps").value = val.toFixed(1);
+      system.batteryAmps = parseFloat(val);
+      rebuildParticles();
+      updateDashboardUI();
+    }
+
+    function saveAllSettings() {
+      userSettings.manualSoc = parseFloat(document.getElementById("cfgSocSlider").value) || 85;
+      userSettings.lockSoc = document.getElementById("cfgLockSoc").checked;
+      userSettings.batteryAmps = parseFloat(document.getElementById("cfgBatAmps").value) || 21.0;
+      userSettings.batteryVoltage = parseFloat(document.getElementById("cfgBatVolt").value) || 13.5;
+      userSettings.batteryCapacity = parseFloat(document.getElementById("cfgBatCap").value) || 200;
+
+      localStorage.setItem("sako_user_settings", JSON.stringify(userSettings));
+
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userSettings)
+      }).catch(e => {});
+
+      system.batterySoc = userSettings.manualSoc;
+      system.batteryAmps = userSettings.batteryAmps;
+      system.batteryVoltage = userSettings.batteryVoltage;
+
+      closeConfigModal();
+      rebuildParticles();
+      updateDashboardUI();
+    }
+
+    setInterval(pollData, 3500);
+    pollData();
+  </script>
+</body>
+</html>
