@@ -20,17 +20,16 @@ OUTPUT_DEVICE_ID = "bf9fbc2c5e5a6dd45bvkvq"   # 16A _ Output Line (Load)
 CHARGING_DEVICE_ID = "bf64784528673eddf0h0u8" # 20A _ Charging Line (Grid In)
 MAIN_DEVICE_ID = "bf857f4b4a51ea82a60qmx"     # বাসার মেইন লাইন।
 
-# --- SITE: KHANKA SHORIF, CHILAHATI, DOMAR, NILPHAMARI ---
-SITE_LAT = 26.2439
-SITE_LON = 88.7967
+# --- EXACT PINPOINT SITE: KHANKA SHORIF JAME MASJID, CHILAHATI ---
+SITE_LAT = 26.3110
+SITE_LON = 88.7840
 ARRAY_WATT = 800.0 # 2x REC 400W
 
-# In-Memory Cache
 token_cache = {"access_token": "", "expire_time": 0}
 weather_cache = {"t": 0, "factor": 1.0, "code": 0, "rain": 0.0, "temp": 28.0, "cloud": 0}
 device_cache = {"t": 0, "data": {}}
 
-# Grid Uptime / Outage Tracker
+# লাইভ লোডশেডিং ও মিটারিং ট্র্যাকার
 grid_tracker = {
     "date": str(date.today()),
     "on_seconds": 0,
@@ -107,8 +106,7 @@ def fetch_single_device(device_id):
 
 def get_all_devices_cached():
     now = time.time()
-    # ৪ সেকেন্ডের হাই-স্পিড ক্যাশ (ব্রাউজার দ্রুত রিফ্রেশ হলেও Tuya-তে প্রেসার পড়বে না)
-    if now - device_cache["t"] < 4 and device_cache["data"]:
+    if now - device_cache["t"] < 3 and device_cache["data"]:
         return device_cache["data"]
     
     out_d = fetch_single_device(OUTPUT_DEVICE_ID)
@@ -144,12 +142,11 @@ def get_live_weather():
             cloud = curr.get("cloud_cover", 0)
             rain = curr.get("precipitation", 0.0)
             
-            # WMO রেইন/ক্লাউড ফ্যাক্টর হিসাব
             if code in [95, 96, 99]: f = 0.12
-            elif code in [55, 63, 65, 81, 82]: f = 0.18 # ভারী বৃষ্টি
-            elif code in [51, 53, 61, 80]: f = 0.25     # হালকা বৃষ্টি
-            elif code == 3 or cloud > 85: f = 0.40      # মেঘলা
-            elif code == 2 or cloud > 50: f = 0.70      # আংশিক মেঘ
+            elif code in [55, 63, 65, 81, 82]: f = 0.18
+            elif code in [51, 53, 61, 80]: f = 0.25
+            elif code == 3 or cloud > 85: f = 0.40
+            elif code == 2 or cloud > 50: f = 0.70
             elif code == 1: f = 0.90
             else: f = 1.0
 
@@ -189,7 +186,7 @@ def update_grid_tracker(is_grid):
         grid_tracker["outages"] += 1
     grid_tracker["last_state"] = is_grid
 
-# --- SAKO LITE V10 API BRIDGE ---
+# --- API ENDPOINTS ---
 
 @app.route("/api/states")
 def ha_states():
@@ -209,7 +206,6 @@ def ha_states():
     sun_el = get_sun_elevation()
     wx = get_live_weather()
 
-    # বাস্তব সূর্য কোণ ও বৃষ্টির আলোকে সোলার পোটেনশিয়াল
     if sun_el <= 2:
         weather_potential = 0.0
     else:
@@ -217,7 +213,6 @@ def ha_states():
         clear_sky_pot = ARRAY_WATT * sin_el * 0.82
         weather_potential = clear_sky_pot * wx["factor"]
 
-    # সোলার ও ব্যাটারি শক্তি বণ্টন
     if not is_grid:
         pv_w = min(load_w, max(0.0, weather_potential))
         dis_w = max(0.0, (load_w / 0.90 + 35.0) - pv_w)
