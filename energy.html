@@ -31,490 +31,79 @@
       --font-mono: "SF Mono", "Roboto Mono", Consolas, monospace;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg-radial); color: var(--text-main); min-height: 100vh; overflow-x: hidden; padding-bottom: 75px; }
 
-    body {
-      background: var(--bg-radial);
-      color: var(--text-main);
-      min-height: 100vh;
-      overflow-x: hidden;
-      padding-bottom: 75px;
-    }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: rgba(7, 11, 20, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--card-border); position: sticky; top: 0; z-index: 50; }
+    .brand-group { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--cyan), #4facfe); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #070b14; font-size: 0.9rem; }
+    .brand-title { font-weight: 800; font-size: 1.05rem; }
+    .brand-sub { font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); }
 
-    /* Top Navigation Header */
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 18px;
-      background: rgba(7, 11, 20, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--card-border);
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
+    .header-status { display: flex; align-items: center; gap: 8px; background: rgba(14, 23, 42, 0.8); border: 1px solid var(--card-border); padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; }
+    .dot-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--battery); box-shadow: 0 0 8px var(--battery); animation: pulse 2s infinite ease-in-out; }
+    .dot-indicator.offline { background: var(--battery-red); animation: none; }
+    .dot-indicator.sim { background: var(--solar); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } }
 
-    .brand-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .container { max-width: 580px; margin: 0 auto; padding: 12px 14px; }
+    .visual-wrapper { position: relative; width: 100%; height: 290px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 24px; overflow: hidden; margin-bottom: 14px; }
+    canvas#powerCanvas { width: 100%; height: 100%; display: block; }
 
-    .brand-icon {
-      width: 28px;
-      height: 28px;
-      background: linear-gradient(135deg, var(--cyan), #4facfe);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      color: #070b14;
-      font-size: 0.9rem;
-      box-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
-    }
+    .node-overlay { position: absolute; transform: translate(-50%, -50%); pointer-events: none; text-align: center; }
+    .badge-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; }
+    .badge-val { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
 
-    .brand-title {
-      font-weight: 800;
-      font-size: 1.05rem;
-      letter-spacing: 0.02em;
-    }
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px; }
+    .glass-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 14px; position: relative; cursor: pointer; backdrop-filter: blur(12px); }
+    .glass-card:hover { border-color: rgba(0, 242, 254, 0.35); }
+    .glass-card::after { content: "✏️"; position: absolute; top: 10px; right: 10px; font-size: 0.75rem; opacity: 0.4; }
 
-    .brand-sub {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      display: block;
-      font-family: var(--font-mono);
-    }
-
-    .header-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(14, 23, 42, 0.8);
-      border: 1px solid var(--card-border);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .header-status:hover {
-      border-color: var(--cyan);
-      box-shadow: 0 0 10px var(--card-glow);
-    }
-
-    .dot-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--battery);
-      box-shadow: 0 0 8px var(--battery);
-      animation: pulse 2s infinite ease-in-out;
-    }
-
-    .dot-indicator.offline {
-      background: var(--battery-red);
-      box-shadow: 0 0 8px var(--battery-red);
-      animation: none;
-    }
-
-    .dot-indicator.sim {
-      background: var(--solar);
-      box-shadow: 0 0 8px var(--solar);
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.2); }
-    }
-
-    /* Outage Alert Banner */
-    .outage-alert {
-      margin: 12px 16px 0;
-      padding: 10px 14px;
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.35);
-      border-radius: 12px;
-      display: none;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.82rem;
-      color: #fca5a5;
-    }
-
-    /* Main Container */
-    .container {
-      max-width: 580px;
-      margin: 0 auto;
-      padding: 12px 14px;
-    }
-
-    /* Interactive Visual Canvas Container */
-    .visual-wrapper {
-      position: relative;
-      width: 100%;
-      height: 290px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 24px;
-      overflow: hidden;
-      margin-bottom: 14px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-    }
-
-    canvas#powerCanvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    /* Node Value Floating Badges */
-    .node-overlay {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      text-align: center;
-    }
-
-    .badge-label {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      font-weight: 700;
-      display: block;
-    }
-
-    .badge-val {
-      font-family: var(--font-mono);
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-main);
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-    }
-
-    /* Metrics Grid */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .glass-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 18px;
-      padding: 14px;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.25s ease;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .glass-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(0, 242, 254, 0.35);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .clickable-tile {
-      cursor: pointer;
-    }
-    .clickable-tile::after {
-      content: "⚙️";
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 0.75rem;
-      opacity: 0.4;
-      transition: opacity 0.2s;
-    }
-    .clickable-tile:hover::after {
-      opacity: 1;
-    }
-
-    .tile-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .tile-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .tile-val {
-      font-family: var(--font-mono);
-      font-size: 1.55rem;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .tile-sub {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
+    .tile-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .tile-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .tile-val { font-family: var(--font-mono); font-size: 1.55rem; font-weight: 800; margin-bottom: 4px; }
+    .tile-sub { font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; }
     .tile.solar .tile-val { color: var(--solar); }
     .tile.battery .tile-val { color: var(--battery); }
     .tile.grid .tile-val { color: var(--grid); }
     .tile.load .tile-val { color: var(--load); }
 
-    /* Modern Pro Progress Bar */
-    .progress-bar-bg {
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 4px;
-      margin: 8px 0;
-      overflow: hidden;
-      position: relative;
-    }
+    .progress-bar-bg { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 4px; margin: 8px 0; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #10b981, #00f2fe); border-radius: 4px; transition: width 0.4s ease; }
 
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #10b981, #00f2fe);
-      border-radius: 4px;
-      transition: width 0.4s ease;
-    }
+    .intel-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 16px; margin-bottom: 14px; }
+    .section-title { font-size: 0.82rem; font-weight: 800; color: var(--cyan); margin-bottom: 12px; }
+    .intel-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.84rem; }
+    .intel-row:last-child { border-bottom: none; }
+    .intel-label { color: var(--text-muted); }
+    .intel-value { font-family: var(--font-mono); font-weight: 700; }
 
-    /* Intelligent Insights Section */
-    .intel-section {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 16px;
-      margin-bottom: 14px;
-      backdrop-filter: blur(12px);
-    }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: rgba(7, 11, 20, 0.95); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 580px; margin: 0 auto; }
+    .nav-link { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); background: none; border: none; cursor: pointer; font-size: 0.7rem; font-weight: 600; }
+    .nav-link.active, .nav-link:hover { color: var(--cyan); }
 
-    .section-title {
-      font-size: 0.82rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      color: var(--cyan);
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+    .modal-box { background: #0f172a; border: 1px solid var(--cyan); border-radius: 22px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; padding: 22px; }
+    .modal-tabs { display: flex; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 14px; }
+    .modal-tab-btn { flex: 1; padding: 8px 4px; border-radius: 8px; border: none; background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+    .modal-tab-btn.active { background: var(--cyan); color: #070b14; }
 
-    .intel-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.84rem;
-    }
-    .intel-row:last-child {
-      border-bottom: none;
-    }
-
-    .intel-label {
-      color: var(--text-muted);
-    }
-
-    .intel-value {
-      font-family: var(--font-mono);
-      font-weight: 700;
-    }
-
-    /* Bottom Navigation Bar */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
-      background: rgba(7, 11, 20, 0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid var(--card-border);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: 100;
-      max-width: 580px;
-      margin: 0 auto;
-    }
-
-    .nav-link {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.7rem;
-      font-weight: 600;
-      background: none;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      padding: 6px 12px;
-      border-radius: 12px;
-    }
-    .nav-link.active, .nav-link:hover {
-      color: var(--cyan);
-    }
-
-    /* Configuration & Quick Control Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.78);
-      backdrop-filter: blur(8px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 16px;
-    }
-
-    .modal-box {
-      background: #0f172a;
-      border: 1px solid var(--cyan);
-      border-radius: 22px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 88vh;
-      overflow-y: auto;
-      padding: 22px;
-      box-shadow: 0 16px 48px rgba(0, 242, 254, 0.2);
-    }
-
-    .modal-tabs {
-      display: flex;
-      gap: 6px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      padding-bottom: 10px;
-      margin-bottom: 14px;
-    }
-    .modal-tab-btn {
-      flex: 1;
-      padding: 8px 4px;
-      border-radius: 8px;
-      border: none;
-      background: rgba(255,255,255,0.05);
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .modal-tab-btn.active {
-      background: var(--cyan);
-      color: #070b14;
-    }
-
-    .form-group {
-      margin-bottom: 14px;
-    }
-    .form-label {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      font-weight: 600;
-    }
-    .form-input, .form-select {
-      width: 100%;
-      padding: 10px 12px;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      color: var(--text-main);
-      font-family: var(--font-mono);
-      font-size: 0.9rem;
-    }
-    .form-input:focus, .form-select:focus {
-      outline: none;
-      border-color: var(--cyan);
-    }
-
-    .slider-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .slider-range {
-      flex: 1;
-      accent-color: var(--cyan);
-      height: 6px;
-      cursor: pointer;
-    }
-
-    .preset-chips {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .preset-chip {
-      padding: 4px 8px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--card-border);
-      border-radius: 6px;
-      font-size: 0.7rem;
-      cursor: pointer;
-      color: var(--text-muted);
-    }
-    .preset-chip:hover {
-      border-color: var(--cyan);
-      color: var(--cyan);
-    }
-
-    .btn-save {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, var(--cyan), #38bdf8);
-      color: #070b14;
-      font-weight: 800;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      margin-top: 10px;
-      box-shadow: 0 4px 16px rgba(0, 242, 254, 0.3);
-    }
-    .btn-cancel {
-      width: 100%;
-      padding: 9px;
-      background: transparent;
-      color: var(--text-muted);
-      border: none;
-      font-size: 0.85rem;
-      cursor: pointer;
-      margin-top: 6px;
-    }
-
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; font-weight: 600; }
+    .form-input, .form-select { width: 100%; padding: 10px 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-main); font-family: var(--font-mono); font-size: 0.9rem; }
+    .slider-range { width: 100%; accent-color: var(--cyan); cursor: pointer; }
+    .preset-chips { display: flex; gap: 6px; margin-top: 6px; }
+    .preset-chip { padding: 5px 10px; background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); border-radius: 6px; font-size: 0.72rem; cursor: pointer; color: var(--text-muted); font-weight: 700; }
+    .preset-chip:hover { border-color: var(--cyan); color: var(--cyan); }
+    .btn-save { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--cyan), #38bdf8); color: #070b14; font-weight: 800; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; }
+    .btn-cancel { width: 100%; padding: 9px; background: transparent; color: var(--text-muted); border: none; cursor: pointer; }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Header -->
   <header class="top-bar">
     <div class="brand-group">
       <div class="brand-icon">⚡</div>
@@ -523,835 +112,192 @@
         <span class="brand-sub">E-SUN 2KVA Hybrid + REC 800W Array</span>
       </div>
     </div>
-    <div class="header-status" onclick="openConfigModal()">
+    <div class="header-status" onclick="openConfigModal('ha')">
       <div class="dot-indicator" id="liveDot"></div>
-      <span id="connLabel" style="font-family: var(--font-mono); font-weight: 700;">Connecting...</span>
+      <span id="connLabel" style="font-family: var(--font-mono); font-weight: 700;">Live Connected</span>
     </div>
   </header>
 
-  <!-- Outage Alert Banner -->
-  <div class="outage-alert" id="outageCard">
-    <span style="font-size: 1.1rem;">⚠️</span>
-    <div>
-      <strong style="color: #ef4444;">GRID POWER OUTAGE DETECTED</strong>
-      <div style="font-size: 0.74rem;">Running on 12V 200Ah Inverter Battery Backup. High-surge appliances suspended.</div>
-    </div>
-  </div>
-
   <main class="container">
-
-    <!-- Interactive Visual Canvas -->
     <div class="visual-wrapper">
       <canvas id="powerCanvas"></canvas>
-
-      <!-- Dynamic Interactive Node Overlays -->
-      <div class="node-overlay" style="top: 18%; left: 50%;">
-        <span class="badge-label">PV Generation</span>
-        <span class="badge-val" id="badgePvVal" style="color: var(--solar);">-- W</span>
-      </div>
-      <div class="node-overlay" style="top: 50%; left: 16%;">
-        <span class="badge-label" id="badgeGridTitle">Main Grid</span>
-        <span class="badge-val" id="badgeGridVal" style="color: var(--grid);">-- W</span>
-      </div>
-      <div class="node-overlay" style="top: 50%; left: 50%;">
-        <span class="badge-label" style="color: var(--cyan);">SAKO Core</span>
-        <span class="badge-val" id="badgeInverterEff" style="font-size:0.75rem; color: var(--text-muted);">92% Eff</span>
-      </div>
-      <div class="node-overlay" style="top: 50%; left: 84%;">
-        <span class="badge-label">House Load</span>
-        <span class="badge-val" id="badgeLoadVal" style="color: var(--load);">-- W</span>
-      </div>
-      <div class="node-overlay" style="top: 82%; left: 50%; cursor: pointer; pointer-events: auto;" onclick="openConfigModal('battery')" title="Click to edit Battery %">
-        <span class="badge-label">12V Battery Bank ✏️</span>
-        <span class="badge-val" id="badgeBatVal" style="color: var(--battery);">-- A</span>
-      </div>
+      <div class="node-overlay" style="top: 18%; left: 50%;"><span class="badge-label">PV Generation</span><span class="badge-val" id="badgePvVal" style="color: var(--solar);">-- W</span></div>
+      <div class="node-overlay" style="top: 50%; left: 16%;"><span class="badge-label">Main Grid</span><span class="badge-val" id="badgeGridVal" style="color: var(--grid);">-- W</span></div>
+      <div class="node-overlay" style="top: 50%; left: 50%;"><span class="badge-label" style="color: var(--cyan);">SAKO Core</span><span class="badge-val" style="font-size:0.75rem; color: var(--text-muted);">2KVA / 12V</span></div>
+      <div class="node-overlay" style="top: 50%; left: 84%;"><span class="badge-label">House Load</span><span class="badge-val" id="badgeLoadVal" style="color: var(--load);">-- W</span></div>
+      <div class="node-overlay" style="top: 82%; left: 50%; cursor: pointer; pointer-events: auto;" onclick="openConfigModal('battery')"><span class="badge-label">12V Battery ✏️</span><span class="badge-val" id="badgeBatVal" style="color: var(--battery);">-- A</span></div>
     </div>
 
-    <!-- 4 Primary Metric Tiles -->
     <div class="metrics-grid">
-      <!-- Solar PV -->
-      <div class="glass-card tile solar clickable-tile" onclick="openConfigModal('solar')" title="Click to tune Solar PV Settings">
-        <div class="tile-header">
-          <span class="tile-title">☀️ Solar PV</span>
-          <span style="font-size:0.7rem; font-family:var(--font-mono); color:var(--text-muted);" id="solarArrayLabel">800W Array</span>
-        </div>
+      <div class="glass-card tile solar" onclick="openConfigModal('solar')">
+        <div class="tile-header"><span class="tile-title">☀️ Solar PV</span><span style="font-size:0.7rem; color:var(--text-muted);">2x REC 400W</span></div>
         <div class="tile-val" id="tilePvW">-- <small style="font-size:0.85rem;">W</small></div>
-        <div class="tile-sub">
-          <span>Today Yield: <strong id="pvDailyKwh">0.00 kWh</strong></span>
-          <span id="pvCoverPercent" style="color:var(--solar); font-weight:700;">--%</span>
-        </div>
+        <div class="tile-sub"><span>Today: <strong id="pvDailyKwh">0.00 kWh</strong></span><span id="pvCoverPercent" style="color:var(--solar); font-weight:700;">--%</span></div>
       </div>
 
-      <!-- Battery Bank -->
-      <div class="glass-card tile battery clickable-tile" onclick="openConfigModal('battery')" title="Click to manually edit Battery % & Amps">
-        <div class="tile-header">
-          <span class="tile-title">🔋 Battery SOC</span>
-          <span style="font-size:0.7rem; font-family:var(--font-mono);" id="tileBatVolts">13.5 V</span>
-        </div>
-        <div class="tile-val" id="tileBatSoc">-- <small style="font-size:0.85rem;">%</small></div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="barBatSoc" style="width: 85%;"></div>
-        </div>
-        <div class="tile-sub">
-          <span id="tileBatCurrent">+21.0 A (Solar Chg)</span>
-          <span id="tileBatRuntime" style="color:var(--battery);">--</span>
-        </div>
+      <div class="glass-card tile battery" onclick="openConfigModal('battery')">
+        <div class="tile-header"><span class="tile-title">🔋 Battery SOC</span><span style="font-size:0.7rem;" id="tileBatVolts">13.5 V</span></div>
+        <div class="tile-val" id="tileBatSoc">85 <small style="font-size:0.85rem;">%</small></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="barBatSoc" style="width: 85%;"></div></div>
+        <div class="tile-sub"><span id="tileBatCurrent">+21.0 A (Solar Chg)</span><span id="tileBatRuntime" style="color:var(--battery);">--</span></div>
       </div>
 
-      <!-- Main Grid Input -->
-      <div class="glass-card tile grid clickable-tile" onclick="openConfigModal('grid')" title="Click to tune Grid parameters">
-        <div class="tile-header">
-          <span class="tile-title">⚡ Grid Input</span>
-          <span style="font-size:0.7rem; font-family:var(--font-mono); color:var(--text-muted);" id="gridVoltSub">228V</span>
-        </div>
-        <div class="tile-val" id="tileGridW">-- <small style="font-size:0.85rem;">W</small></div>
-        <div class="tile-sub">
-          <span id="tileGridStatus">Grid Online</span>
-          <span>Today: <strong id="gridDailyKwh">0.00 kWh</strong></span>
-        </div>
+      <div class="glass-card tile grid" onclick="openConfigModal('grid')">
+        <div class="tile-header"><span class="tile-title">⚡ Grid Input</span><span style="font-size:0.7rem; color:var(--text-muted);" id="gridVoltSub">228V</span></div>
+        <div class="tile-val" id="tileGridW">0 <small style="font-size:0.85rem;">W</small></div>
+        <div class="tile-sub"><span id="tileGridStatus">Grid Online</span><span>Today: <strong id="gridDailyKwh">0.00 kWh</strong></span></div>
       </div>
 
-      <!-- Inverter AC Load Output -->
-      <div class="glass-card tile load clickable-tile" onclick="openConfigModal('grid')" title="Click to tune Load parameters">
-        <div class="tile-header">
-          <span class="tile-title">🏠 AC Load</span>
-          <span style="font-size:0.7rem; font-family:var(--font-mono); color:var(--text-muted);">Inverter Out</span>
-        </div>
-        <div class="tile-val" id="tileLoadW">-- <small style="font-size:0.85rem;">W</small></div>
-        <div class="tile-sub">
-          <span id="loadCurrentSub">-- A @ 228V</span>
-          <span>Peak: <strong id="peakLoadVal">-- W</strong></span>
-        </div>
+      <div class="glass-card tile load" onclick="openConfigModal('grid')">
+        <div class="tile-header"><span class="tile-title">🏠 AC Load</span><span style="font-size:0.7rem; color:var(--text-muted);">Inverter Out</span></div>
+        <div class="tile-val" id="tileLoadW">120 <small style="font-size:0.85rem;">W</small></div>
+        <div class="tile-sub"><span id="loadCurrentSub">0.5 A @ 228V</span><span>Peak: <strong id="peakLoadVal">-- W</strong></span></div>
       </div>
     </div>
 
-    <!-- Intelligent Energy Management & SAKO Analytics -->
     <div class="intel-section">
-      <div class="section-title">⚡ SAKO E-SUN 2KVA SYSTEM INTELLIGENCE</div>
-      
-      <div class="intel-row">
-        <span class="intel-label">Solar Direct Load Coverage</span>
-        <span class="intel-value" id="statSolarCover" style="color:var(--solar);">--%</span>
-      </div>
-      <div class="intel-row">
-        <span class="intel-label">Battery Estimated Backup at Current Load</span>
-        <span class="intel-value" id="statBackupTime" style="color:var(--cyan);">Calculating...</span>
-      </div>
-      <div class="intel-row">
-        <span class="intel-label">Time until Battery Full Charge</span>
-        <span class="intel-value" id="statTimeToFull" style="color:var(--battery);">--</span>
-      </div>
-      <div class="intel-row">
-        <span class="intel-label">Inverter Core Loss & Standby Idle</span>
-        <span class="intel-value" id="statInverterLoss">45 W</span>
-      </div>
-      <div class="intel-row">
-        <span class="intel-label">Total Financial Savings Today</span>
-        <span class="intel-value" id="statSavingsBdt" style="color:var(--battery);">৳ 0.00 BDT</span>
-      </div>
+      <div class="section-title">⚡ SYSTEM INTELLIGENCE</div>
+      <div class="intel-row"><span class="intel-label">Solar Direct Load Coverage</span><span class="intel-value" id="statSolarCover" style="color:var(--solar);">100%</span></div>
+      <div class="intel-row"><span class="intel-label">Battery Estimated Backup</span><span class="intel-value" id="statBackupTime" style="color:var(--cyan);">--</span></div>
+      <div class="intel-row"><span class="intel-label">Time until Battery Full</span><span class="intel-value" id="statTimeToFull" style="color:var(--battery);">~ 1.2 Hours</span></div>
+      <div class="intel-row"><span class="intel-label">Inverter Standby Loss</span><span class="intel-value">45 W</span></div>
     </div>
-
   </main>
 
-  <!-- Bottom Navigation -->
   <nav class="bottom-nav">
-    <button class="nav-link active" onclick="switchNav('overview')">
-      <span style="font-size: 1.25rem;">📊</span>
-      <span>Overview</span>
-    </button>
-    <button class="nav-link" onclick="openConfigModal('battery')">
-      <span style="font-size: 1.25rem;">⚙️</span>
-      <span>Settings</span>
-    </button>
-    <button class="nav-link" onclick="triggerSimulationToggle()">
-      <span style="font-size: 1.25rem;">🔄</span>
-      <span>Refresh</span>
-    </button>
-    <button class="nav-link" onclick="exportDataJson()">
-      <span style="font-size: 1.25rem;">📥</span>
-      <span>Export</span>
-    </button>
+    <button class="nav-link active" onclick="window.scrollTo({top:0,behavior:'smooth'})"><span style="font-size:1.25rem;">📊</span><span>Overview</span></button>
+    <button class="nav-link" onclick="openConfigModal('battery')"><span style="font-size:1.25rem;">⚙️</span><span>Settings</span></button>
+    <button class="nav-link" onclick="pollData()"><span style="font-size:1.25rem;">🔄</span><span>Refresh</span></button>
   </nav>
 
-  <!-- Comprehensive System Settings & Live Calibration Modal -->
+  <!-- Configuration Modal -->
   <div class="modal-overlay" id="configModal">
     <div class="modal-box">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <div>
-          <h2 style="font-size: 1.15rem; color: var(--cyan); margin-bottom:2px;">⚙️ System Settings & Calibration</h2>
-          <span style="font-size: 0.72rem; color: var(--text-muted);">Tune live parameters, manual battery SOC, or simulated hardware</span>
-        </div>
-        <button style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer; padding:4px;" onclick="closeConfigModal()">&times;</button>
+        <h2 style="font-size:1.15rem; color:var(--cyan);">⚙️ Settings & Manual Calibration</h2>
+        <button style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;" onclick="closeConfigModal()">&times;</button>
       </div>
 
-      <!-- Navigation Tabs inside Modal -->
       <div class="modal-tabs">
         <button class="modal-tab-btn active" id="tabBtn_battery" onclick="switchModalTab('battery')">🔋 Battery & SOC</button>
         <button class="modal-tab-btn" id="tabBtn_solar" onclick="switchModalTab('solar')">☀️ Solar Power</button>
         <button class="modal-tab-btn" id="tabBtn_grid" onclick="switchModalTab('grid')">⚡ Grid & Load</button>
-        <button class="modal-tab-btn" id="tabBtn_ha" onclick="switchModalTab('ha')">🔗 Cloud Sync</button>
       </div>
 
-      <!-- Tab 1: Battery & SOC -->
+      <!-- Tab: Battery -->
       <div class="tab-pane active" id="tabPane_battery">
         <div class="form-group">
-          <div class="form-label">
-            <span>Manual Battery SOC (%)</span>
-            <strong id="lblSocDisplay" style="color:var(--cyan); font-family:var(--font-mono);">85%</strong>
-          </div>
-          <div class="slider-container">
-            <input type="range" class="slider-range" id="cfgSocSlider" min="10" max="100" step="1" value="85" oninput="onSocSlider(this.value)">
-          </div>
+          <div class="form-label"><span>Manual Battery SOC (%)</span><strong id="lblSocDisplay" style="color:var(--cyan);">85%</strong></div>
+          <input type="range" class="slider-range" id="cfgSocSlider" min="10" max="100" step="1" value="85" oninput="onSocSlider(this.value)">
           <div class="preset-chips">
-            <span class="preset-chip" onclick="setSocPreset(20)">20% (Cutoff)</span>
-            <span class="preset-chip" onclick="setSocPreset(50)">50% (Half)</span>
-            <span class="preset-chip" onclick="setSocPreset(80)">80% (Bulk)</span>
-            <span class="preset-chip" onclick="setSocPreset(100)">100% (Full)</span>
+            <button class="preset-chip" onclick="setSocPreset(50)">50%</button>
+            <button class="preset-chip" onclick="setSocPreset(70)">70%</button>
+            <button class="preset-chip" onclick="setSocPreset(80)">80%</button>
+            <button class="preset-chip" onclick="setSocPreset(85)">85%</button>
+            <button class="preset-chip" onclick="setSocPreset(100)">100%</button>
           </div>
         </div>
 
         <div class="form-group">
-          <div class="form-label">
-            <span>Battery Current (Amps)</span>
-            <span style="font-size:0.7rem; color:var(--text-muted);">+ for charging, - for drain</span>
-          </div>
+          <div class="form-label"><span>Battery Charging Current (Amps)</span><span style="color:var(--gold);">Live: ~20A–22A</span></div>
           <input type="number" class="form-input" id="cfgBatAmps" step="0.5" value="21.0">
           <div class="preset-chips">
-            <span class="preset-chip" onclick="setBatAmpsPreset(21.0)">+21A (Solar Float)</span>
-            <span class="preset-chip" onclick="setBatAmpsPreset(10.0)">+10A (Slow)</span>
-            <span class="preset-chip" onclick="setBatAmpsPreset(-15.0)">-15A (Discharge)</span>
-            <span class="preset-chip" onclick="setBatAmpsPreset(0.0)">0A (Idle)</span>
+            <button class="preset-chip" onclick="setBatAmpsPreset(21.0)">+21A (Solar)</button>
+            <button class="preset-chip" onclick="setBatAmpsPreset(15.0)">+15A</button>
+            <button class="preset-chip" onclick="setBatAmpsPreset(-10.0)">-10A (Drain)</button>
+            <button class="preset-chip" onclick="setBatAmpsPreset(0.0)">0A (Idle)</button>
           </div>
         </div>
 
         <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <div>
-            <div class="form-label"><span>Voltage (V)</span></div>
-            <input type="number" class="form-input" id="cfgBatVolt" step="0.1" value="13.5">
-          </div>
-          <div>
-            <div class="form-label"><span>Capacity (Ah)</span></div>
-            <input type="number" class="form-input" id="cfgBatCap" step="5" value="200">
-          </div>
+          <div><div class="form-label"><span>Voltage (V)</span></div><input type="number" class="form-input" id="cfgBatVolt" value="13.5" step="0.1"></div>
+          <div><div class="form-label"><span>Capacity (Ah)</span></div><input type="number" class="form-input" id="cfgBatCap" value="200" step="5"></div>
         </div>
 
         <div class="form-group">
           <label style="display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
-            <input type="checkbox" id="cfgLockSoc" style="accent-color:var(--cyan);">
-            <span>Lock Manual SOC (Do not let auto-calculations overwrite)</span>
+            <input type="checkbox" id="cfgLockSoc" checked style="accent-color:var(--cyan);">
+            <span>Lock Manual SOC (HA-এর অটো ওভাররাইড ব্লক রাখুন)</span>
           </label>
         </div>
       </div>
 
-      <!-- Tab 2: Solar Power -->
+      <!-- Tab: Solar -->
       <div class="tab-pane" id="tabPane_solar">
         <div class="form-group">
-          <div class="form-label"><span>Solar Estimation Mode</span></div>
-          <select class="form-select" id="cfgSolarMode" onchange="onSolarModeChange()">
-            <option value="auto">Auto (Battery Charge Amps + Load Coverage)</option>
-            <option value="manual">Manual Fixed Generation (Watt)</option>
+          <div class="form-label"><span>Solar Calculation</span></div>
+          <select class="form-select" id="cfgSolarMode">
+            <option value="auto">Auto (Battery DC Charge + Load Coverage)</option>
+            <option value="manual">Manual Fixed (Specify Watt)</option>
           </select>
         </div>
-        <div class="form-group" id="groupManualSolar" style="display:none;">
-          <div class="form-label"><span>Fixed Solar PV (Watts)</span></div>
-          <input type="number" class="form-input" id="cfgSolarWatts" value="320" step="10">
-        </div>
         <div class="form-group">
-          <div class="form-label"><span>Solar Array Rating</span></div>
-          <input type="text" class="form-input" value="2x REC Alpha Pure-R 400W (800W Series)" readonly style="opacity:0.6;">
+          <div class="form-label"><span>Array Capacity</span></div>
+          <input type="text" class="form-input" value="2x REC 400W (800W Array)" readonly style="opacity:0.6;">
         </div>
       </div>
 
-      <!-- Tab 3: Grid & Load -->
+      <!-- Tab: Grid & Load -->
       <div class="tab-pane" id="tabPane_grid">
-        <div class="form-group">
-          <div class="form-label"><span>Grid Connection Status</span></div>
-          <select class="form-select" id="cfgGridOnline">
-            <option value="true">Grid Online (Active)</option>
-            <option value="false">Grid Offline (Load Shedding)</option>
-          </select>
-        </div>
-        <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <div>
-            <div class="form-label"><span>Grid Power (W)</span></div>
-            <input type="number" class="form-input" id="cfgGridPower" value="0">
-          </div>
-          <div>
-            <div class="form-label"><span>House Load (W)</span></div>
-            <input type="number" class="form-input" id="cfgLoadPower" value="120">
-          </div>
-        </div>
         <div class="form-group">
           <div class="form-label"><span>Electricity Tariff (BDT/kWh)</span></div>
           <input type="number" class="form-input" id="cfgTariffRate" value="15.00" step="0.5">
         </div>
       </div>
 
-      <!-- Tab 4: Cloud & HA Sync -->
-      <div class="tab-pane" id="tabPane_ha">
-        <div class="form-group">
-          <div class="form-label"><span>Backend API Origin</span></div>
-          <input type="text" class="form-input" id="cfgHaUrl" placeholder="Auto-detected (e.g. current domain)">
-        </div>
-        <div class="form-group">
-          <div class="form-label"><span>Auth Token (Optional)</span></div>
-          <input type="password" class="form-input" id="cfgHaToken" placeholder="Optional for Render backend">
-        </div>
-      </div>
-
-      <!-- Modal Action Buttons -->
-      <div style="margin-top: 14px;">
-        <button class="btn-save" onclick="saveAllSettings()">💾 Save & Apply Changes</button>
+      <div style="margin-top:14px;">
+        <button class="btn-save" onclick="saveAllSettings()">💾 Save & Apply</button>
         <button class="btn-cancel" onclick="closeConfigModal()">Cancel</button>
       </div>
     </div>
   </div>
 
   <script>
-    // System Telemetry Model
-    let system = {
-      pvPower: 320,
-      gridVoltage: 228,
-      inverterInputPower: 0,
-      inverterOutputPower: 120,
-      gridOnline: true,
-      mainGridPower: 0,
-      batterySoc: 85,
-      batteryVoltage: 13.5,
-      batteryAmps: 21.0,
-      inverterLossPower: 45,
-      pvDailyKwh: 1.84,
-      gridDailyKwh: 0.0,
-      tariffRate: 15.00,
-      peakLoad: 450
-    };
-
-    // User Settings Cache with LocalStorage Persistence
-    let userSettings = {
-      manualSoc: 85,
-      lockSoc: true,
-      batteryAmps: 21.0,
-      batteryVoltage: 13.5,
-      batteryCapacity: 200,
-      solarMode: "auto",
-      manualSolarWatts: 320,
-      gridOnline: true,
-      inverterInputPower: 0,
-      inverterOutputPower: 120,
-      tariffRate: 15.00
-    };
+    let system = { pvPower: 380, gridVoltage: 228, inverterInputPower: 0, inverterOutputPower: 120, gridOnline: true, batterySoc: 85, batteryVoltage: 13.5, batteryAmps: 21.0, pvDailyKwh: 2.10, gridDailyKwh: 0.0, tariffRate: 15.00, peakLoad: 450 };
+    let userSettings = { manualSoc: 85, lockSoc: true, batteryAmps: 21.0, batteryVoltage: 13.5, batteryCapacity: 200, solarMode: "auto", tariffRate: 15.00 };
 
     function loadSavedSettings() {
       try {
         const saved = localStorage.getItem("sako_user_settings");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          Object.assign(userSettings, parsed);
-        }
-      } catch (e) {
-        console.warn("Could not parse saved user settings", e);
-      }
-
+        if (saved) Object.assign(userSettings, JSON.parse(saved));
+      } catch (e) {}
       system.batterySoc = userSettings.manualSoc;
       system.batteryAmps = userSettings.batteryAmps;
       system.batteryVoltage = userSettings.batteryVoltage;
-      system.tariffRate = userSettings.tariffRate;
     }
     loadSavedSettings();
 
-    // Auto-detect URL from window.location.origin
-    let haConfig = {
-      url: localStorage.getItem("sako_ha_url") || (window.location.origin.startsWith("http") ? window.location.origin : ""),
-      token: localStorage.getItem("sako_ha_token") || "cloud_token",
-      connected: false,
-      consecutiveFailures: 0
-    };
-
-    // Canvas & Animated Particle Flow Engine
     const canvas = document.getElementById("powerCanvas");
     const ctx = canvas.getContext("2d");
-
-    function resizeCanvas() {
-      canvas.width = canvas.parentElement.clientWidth;
-      canvas.height = canvas.parentElement.clientHeight;
-    }
-    window.addEventListener("resize", () => {
-      resizeCanvas();
-      rebuildParticles();
-    });
+    function resizeCanvas() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
+    window.addEventListener("resize", () => { resizeCanvas(); rebuildParticles(); });
     resizeCanvas();
 
-    // Node Positions
     function getNodes() {
-      const w = canvas.width;
-      const h = canvas.height;
+      const w = canvas.width, h = canvas.height;
       return {
-        pv: { x: w * 0.5, y: h * 0.20, color: "#ffb703", label: "PV" },
-        grid: { x: w * 0.16, y: h * 0.50, color: "#3b82f6", label: "GRID" },
-        inverter: { x: w * 0.5, y: h * 0.50, color: "#00f2fe", label: "INV" },
-        load: { x: w * 0.84, y: h * 0.50, color: "#f97316", label: "LOAD" },
-        battery: { x: w * 0.5, y: h * 0.82, color: "#10b981", label: "BAT" }
+        pv: { x: w * 0.5, y: h * 0.20, color: "#ffb703" },
+        grid: { x: w * 0.16, y: h * 0.50, color: "#3b82f6" },
+        inverter: { x: w * 0.5, y: h * 0.50, color: "#00f2fe" },
+        load: { x: w * 0.84, y: h * 0.50, color: "#f97316" },
+        battery: { x: w * 0.5, y: h * 0.82, color: "#10b981" }
       };
     }
 
     class Particle {
-      constructor(path, color, speed) {
-        this.path = path;
-        this.color = color;
-        this.speed = speed;
-        this.progress = Math.random();
-      }
-
-      update() {
-        this.progress += this.speed;
-        if (this.progress >= 1) this.progress = 0;
-      }
-
+      constructor(path, color, speed) { this.path = path; this.color = color; this.speed = speed; this.progress = Math.random(); }
+      update() { this.progress += this.speed; if (this.progress >= 1) this.progress = 0; }
       draw(ctx) {
-        const p0 = this.path[0];
-        const p1 = this.path[1];
-        const x = p0.x + (p1.x - p0.x) * this.progress;
-        const y = p0.y + (p1.y - p0.y) * this.progress;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x, y, 3.2, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 10;
-        ctx.fill();
-        ctx.restore();
+        const p0 = this.path[0], p1 = this.path[1];
+        const x = p0.x + (p1.x - p0.x) * this.progress, y = p0.y + (p1.y - p0.y) * this.progress;
+        ctx.save(); ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+        ctx.fillStyle = this.color; ctx.shadowColor = this.color; ctx.shadowBlur = 10; ctx.fill(); ctx.restore();
       }
     }
 
     let particles = [];
-
     function rebuildParticles() {
       particles = [];
-      const nodes = getNodes();
-
-      // 1. Solar to Inverter / Battery
+      const n = getNodes();
       if (system.pvPower > 15) {
-        const count = Math.min(10, Math.max(3, Math.floor(system.pvPower / 70)));
-        for (let i = 0; i < count; i++) {
-          particles.push(new Particle([nodes.pv, nodes.inverter], nodes.pv.color, 0.008 + (system.pvPower / 25000)));
-        }
-      }
-
-      // 2. Grid to Inverter
-      if (system.gridOnline && system.inverterInputPower > 15) {
-        const count = Math.min(8, Math.max(2, Math.floor(system.inverterInputPower / 80)));
-        for (let i = 0; i < count; i++) {
-          particles.push(new Particle([nodes.grid, nodes.inverter], nodes.grid.color, 0.009));
-        }
-      }
-
-      // 3. Inverter to Load
-      if (system.inverterOutputPower > 15) {
-        const count = Math.min(10, Math.max(3, Math.floor(system.inverterOutputPower / 60)));
-        for (let i = 0; i < count; i++) {
-          particles.push(new Particle([nodes.inverter, nodes.load], nodes.load.color, 0.01));
-        }
-      }
-
-      // 4. Battery Flows
-      if (system.batteryAmps > 0.5) {
-        // Charging
-        const count = Math.min(8, Math.max(2, Math.floor(system.batteryAmps / 4)));
-        for (let i = 0; i < count; i++) {
-          particles.push(new Particle([nodes.inverter, nodes.battery], "#10b981", 0.008));
-        }
-      } else if (system.batteryAmps < -0.5) {
-        // Discharging
-        const count = Math.min(8, Math.max(2, Math.floor(Math.abs(system.batteryAmps) / 4)));
-        for (let i = 0; i < count; i++) {
-          particles.push(new Particle([nodes.battery, nodes.inverter], "#ef4444", 0.009));
-        }
-      }
-    }
-
-    function renderAnimation() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const nodes = getNodes();
-
-      // Draw Connection Conduit Tracks
-      const tracks = [
-        [nodes.pv, nodes.inverter],
-        [nodes.grid, nodes.inverter],
-        [nodes.inverter, nodes.load],
-        [nodes.inverter, nodes.battery]
-      ];
-
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-      tracks.forEach(([p0, p1]) => {
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
-      });
-
-      // Draw Center Hub (SAKO Inverter)
-      ctx.beginPath();
-      ctx.arc(nodes.inverter.x, nodes.inverter.y, 24, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0, 242, 254, 0.12)";
-      ctx.strokeStyle = "var(--cyan)";
-      ctx.lineWidth = 2;
-      ctx.shadowColor = "rgba(0, 242, 254, 0.4)";
-      ctx.shadowBlur = 14;
-      ctx.fill();
-      ctx.stroke();
-
-      // Render Particles
-      particles.forEach(p => {
-        p.update();
-        p.draw(ctx);
-      });
-
-      requestAnimationFrame(renderAnimation);
-    }
-
-    rebuildParticles();
-    renderAnimation();
-
-    // UI Updating Engine
-    function updateDashboardUI() {
-      // Calculate realistic Solar PV:
-      // Inverter DC solar charging goes directly into battery (~20-22A * ~13.5V = ~280W)
-      const batChargePower = Math.max(0, system.batteryAmps * system.batteryVoltage);
-      const acSolarLoad = Math.max(0, system.inverterOutputPower - (system.gridOnline ? (system.inverterInputPower * 0.94) : 0));
-
-      if (userSettings.solarMode === "manual" && userSettings.manualSolarWatts > 0) {
-        system.pvPower = userSettings.manualSolarWatts;
-      } else {
-        // Auto: include battery charging power + AC load solar coverage
-        system.pvPower = Math.round(acSolarLoad + batChargePower);
-      }
-
-      // Outage Display
-      const outageEl = document.getElementById("outageCard");
-      if (!system.gridOnline) {
-        outageEl.style.display = "flex";
-        document.getElementById("badgeGridTitle").innerText = "GRID OFFLINE";
-        document.getElementById("badgeGridTitle").style.color = "#ef4444";
-        document.getElementById("gridVoltSub").innerText = "0V | Breaker Open";
-        document.getElementById("tileGridStatus").innerText = "Grid Disconnected (0V)";
-        document.getElementById("tileGridStatus").style.color = "#ef4444";
-      } else {
-        outageEl.style.display = "none";
-        document.getElementById("badgeGridTitle").innerText = "MAIN GRID";
-        document.getElementById("badgeGridTitle").style.color = "var(--grid)";
-        document.getElementById("gridVoltSub").innerText = Math.round(system.gridVoltage) + "V (Live)";
-        document.getElementById("tileGridStatus").innerText = "Grid Online: " + Math.round(system.gridVoltage) + " V";
-        document.getElementById("tileGridStatus").style.color = "var(--text-muted)";
-      }
-
-      // Overlays on Canvas
-      document.getElementById("badgePvVal").innerText = Math.round(system.pvPower) + " W";
-      document.getElementById("badgeGridVal").innerText = (system.gridOnline ? Math.round(system.inverterInputPower) : 0) + " W";
-      document.getElementById("badgeLoadVal").innerText = Math.round(system.inverterOutputPower) + " W";
-      
-      const batSign = system.batteryAmps >= 0 ? "+" : "";
-      document.getElementById("badgeBatVal").innerText = batSign + system.batteryAmps.toFixed(1) + " A";
-      document.getElementById("badgeBatVal").style.color = system.batteryAmps >= 0 ? "var(--battery)" : "var(--battery-red)";
-      
-      // Tile 1: Solar
-      document.getElementById("tilePvW").innerHTML = Math.round(system.pvPower) + ` <small style="font-size:0.85rem;">W</small>`;
-      document.getElementById("pvDailyKwh").innerText = system.pvDailyKwh.toFixed(2) + " kWh";
-      const cover = system.inverterOutputPower > 0 ? Math.min(100, Math.round((system.pvPower / system.inverterOutputPower) * 100)) : 100;
-      document.getElementById("pvCoverPercent").innerText = cover + "% Cover";
-
-      // Tile 2: Battery
-      document.getElementById("tileBatSoc").innerHTML = Math.round(system.batterySoc) + ` <small style="font-size:0.85rem;">%</small>`;
-      document.getElementById("tileBatVolts").innerText = system.batteryVoltage.toFixed(1) + " V";
-      document.getElementById("barBatSoc").style.width = Math.min(100, Math.max(5, system.batterySoc)) + "%";
-      
-      if (system.batteryAmps > 0.5) {
-        document.getElementById("tileBatCurrent").innerText = `+${system.batteryAmps.toFixed(1)} A (Solar Chg)`;
-        document.getElementById("tileBatCurrent").style.color = "var(--battery)";
-      } else if (system.batteryAmps < -0.5) {
-        document.getElementById("tileBatCurrent").innerText = `${system.batteryAmps.toFixed(1)} A (Discharge)`;
-        document.getElementById("tileBatCurrent").style.color = "var(--battery-red)";
-      } else {
-        document.getElementById("tileBatCurrent").innerText = "0.0 A (Standby Float)";
-        document.getElementById("tileBatCurrent").style.color = "var(--text-muted)";
-      }
-
-      // Tile 3: Grid
-      document.getElementById("tileGridW").innerHTML = (system.gridOnline ? Math.round(system.inverterInputPower) : 0) + ` <small style="font-size:0.85rem;">W</small>`;
-      document.getElementById("gridDailyKwh").innerText = system.gridDailyKwh.toFixed(2) + " kWh";
-
-      // Tile 4: Load
-      document.getElementById("tileLoadW").innerHTML = Math.round(system.inverterOutputPower) + ` <small style="font-size:0.85rem;">W</small>`;
-      const loadA = system.gridVoltage > 50 ? (system.inverterOutputPower / system.gridVoltage).toFixed(1) : (system.inverterOutputPower / 228).toFixed(1);
-      document.getElementById("loadCurrentSub").innerText = `${loadA} A @ ${Math.round(system.gridVoltage || 228)}V`;
-      if (system.inverterOutputPower > system.peakLoad) system.peakLoad = Math.round(system.inverterOutputPower);
-      document.getElementById("peakLoadVal").innerText = system.peakLoad + " W";
-
-      // Intelligent Analytics Section
-      document.getElementById("statSolarCover").innerText = cover + "%";
-      document.getElementById("statInverterLoss").innerText = Math.round(system.inverterLossPower) + " W";
-
-      // Battery Runtime & Time to Full calculation
-      if (system.batteryAmps < -0.5) {
-        // Discharging
-        const usableAh = userSettings.batteryCapacity * Math.max(0, (system.batterySoc - 20) / 100);
-        const hours = usableAh / Math.abs(system.batteryAmps);
-        document.getElementById("statBackupTime").innerText = `~ ${hours.toFixed(1)} Hours at ${Math.round(system.inverterOutputPower)}W`;
-        document.getElementById("tileBatRuntime").innerText = `${hours.toFixed(1)}h backup`;
-        document.getElementById("statTimeToFull").innerText = "Discharging (No Grid/PV)";
-      } else if (system.batteryAmps > 0.5) {
-        // Charging
-        document.getElementById("statBackupTime").innerText = "Active Solar Support (Full Capacity)";
-        const needAh = userSettings.batteryCapacity * Math.max(0, (100 - system.batterySoc) / 100);
-        const timeToFullH = needAh / system.batteryAmps;
-        document.getElementById("statTimeToFull").innerText = system.batterySoc >= 98 ? "Full / Float Trickle" : `~ ${timeToFullH.toFixed(1)} Hours`;
-        document.getElementById("tileBatRuntime").innerText = system.batterySoc >= 98 ? "Full (Float)" : `${timeToFullH.toFixed(1)}h to full`;
-      } else {
-        document.getElementById("statBackupTime").innerText = "Idle / Fully Supported";
-        document.getElementById("statTimeToFull").innerText = "Float / Balanced";
-        document.getElementById("tileBatRuntime").innerText = "Float / Ready";
-      }
-
-      // Financials (Configured strictly to 15.00 BDT)
-      const dailySaved = (system.pvDailyKwh * system.tariffRate);
-      document.getElementById("statSavingsBdt").innerText = `৳ ${dailySaved.toFixed(2)} BDT`;
-    }
-
-    // Backend Polling Engine
-    async function pollHomeAssistant() {
-      if (!haConfig.url) {
-        document.getElementById("connLabel").innerText = "Simulator Mode";
-        document.getElementById("liveDot").className = "dot-indicator sim";
-        runAutonomousSimulator();
-        return;
-      }
-
-      try {
-        const response = await fetch(`${haConfig.url}/api/states`, {
-          headers: {
-            "Authorization": `Bearer ${haConfig.token}`,
-            "Content-Type": "application/json"
-          },
-          signal: AbortSignal.timeout(6000)
-        });
-
-        if (!response.ok) throw new Error("HA HTTP error " + response.status);
-
-        const states = await response.json();
-        haConfig.connected = true;
-        haConfig.consecutiveFailures = 0;
-
-        document.getElementById("connLabel").innerText = "Cloud Live Connected";
-        document.getElementById("liveDot").className = "dot-indicator";
-
-        const getStateVal = (entityIds, def = 0) => {
-          const ids = Array.isArray(entityIds) ? entityIds : [entityIds];
-          for (const id of ids) {
-            const item = states.find(s => s.entity_id === id);
-            if (item && item.state !== "unavailable" && item.state !== "unknown") {
-              const v = parseFloat(item.state);
-              if (!isNaN(v)) return v;
-            }
-          }
-          return def;
-        };
-
-        const getBinaryState = (entityIds, def = false) => {
-          const ids = Array.isArray(entityIds) ? entityIds : [entityIds];
-          for (const id of ids) {
-            const item = states.find(s => s.entity_id === id);
-            if (item && item.state !== "unavailable" && item.state !== "unknown") {
-              return item.state === "on" || item.state === "true";
-            }
-          }
-          return def;
-        };
-
-        // Populate System Readings with smart Tuya + HA fallbacks
-        system.gridOnline = getBinaryState(["binary_sensor.energy_mate_grid_available", "binary_sensor.energy_mate_v4_grid_present"], userSettings.gridOnline);
-        system.gridVoltage = getStateVal(["sensor.baasaar_mein_laain_voltage", "sensor.20a_charging_line_voltage", "sensor.16a_output_line_voltage"], 228);
-        system.mainGridPower = getStateVal(["sensor.energy_mate_main_grid_power", "sensor.baasaar_mein_laain_power"], userSettings.inverterInputPower);
-        system.inverterInputPower = getStateVal(["sensor.energy_mate_inverter_input_power", "sensor.20a_charging_line_power"], userSettings.inverterInputPower);
-        system.inverterOutputPower = getStateVal(["sensor.energy_mate_inverter_output_power", "sensor.16a_output_line_power"], userSettings.inverterOutputPower);
-        
-        // Manual vs Live Battery SOC
-        if (!userSettings.lockSoc) {
-          system.batterySoc = getStateVal(["sensor.energy_mate_battery_soc", "sensor.energy_mate_v4_battery_soc"], userSettings.manualSoc);
-        } else {
-          system.batterySoc = userSettings.manualSoc;
-        }
-
-        // Live Battery Amps (or user calibrated solar charging amps)
-        const haAmps = getStateVal(["sensor.energy_mate_battery_net_current", "sensor.energy_mate_v4_battery_current"], null);
-        if (haAmps !== null && Math.abs(haAmps) > 0.1) {
-          system.batteryAmps = haAmps;
-        } else {
-          system.batteryAmps = userSettings.batteryAmps || 21.0;
-        }
-
-        system.inverterLossPower = getStateVal(["sensor.energy_mate_inverter_own_consumption"], 45);
-        system.pvDailyKwh = getStateVal(["sensor.energy_mate_pv_daily"], system.pvDailyKwh);
-        system.gridDailyKwh = getStateVal(["sensor.energy_mate_grid_daily"], system.gridDailyKwh);
-
-        rebuildParticles();
-        updateDashboardUI();
-      } catch (err) {
-        haConfig.consecutiveFailures++;
-        if (haConfig.consecutiveFailures > 3) {
-          document.getElementById("connLabel").innerText = "Reconnecting...";
-          document.getElementById("liveDot").className = "dot-indicator offline";
-        }
-        runAutonomousSimulator();
-      }
-    }
-
-    // Autonomous Simulator mode (fallback)
-    function runAutonomousSimulator() {
-      if (userSettings.lockSoc) {
-        system.batterySoc = userSettings.manualSoc;
-      }
-      system.batteryAmps = userSettings.batteryAmps;
-      system.batteryVoltage = userSettings.batteryVoltage;
-      system.inverterInputPower = userSettings.inverterInputPower;
-      system.inverterOutputPower = userSettings.inverterOutputPower;
-      system.gridOnline = userSettings.gridOnline;
-
-      system.inverterLossPower = 45 + (system.inverterOutputPower * 0.08);
-
-      rebuildParticles();
-      updateDashboardUI();
-    }
-
-    // Periodic Poller
-    setInterval(() => {
-      pollHomeAssistant();
-    }, 3500);
-
-    // Modal Navigation and Tab Switching
-    function switchModalTab(tabId) {
-      const tabs = ['battery', 'solar', 'grid', 'ha'];
-      tabs.forEach(t => {
-        const btn = document.getElementById("tabBtn_" + t);
-        const pane = document.getElementById("tabPane_" + t);
-        if (btn) btn.className = "modal-tab-btn " + (t === tabId ? "active" : "");
-        if (pane) pane.className = "tab-pane " + (t === tabId ? "active" : "");
-      });
-    }
-
-    function openConfigModal(initialTab = "battery") {
-      document.getElementById("cfgSocSlider").value = Math.round(system.batterySoc);
-      document.getElementById("lblSocDisplay").innerText = Math.round(system.batterySoc) + "%";
-      document.getElementById("cfgBatAmps").value = system.batteryAmps.toFixed(1);
-      document.getElementById("cfgBatVolt").value = system.batteryVoltage.toFixed(1);
-      document.getElementById("cfgBatCap").value = userSettings.batteryCapacity || 200;
-      document.getElementById("cfgLockSoc").checked = userSettings.lockSoc;
-
-      document.getElementById("cfgSolarMode").value = userSettings.solarMode;
-      document.getElementById("cfgSolarWatts").value = userSettings.manualSolarWatts || 320;
-      onSolarModeChange();
-
-      document.getElementById("cfgGridOnline").value = system.gridOnline ? "true" : "false";
-      document.getElementById("cfgGridPower").value = Math.round(system.inverterInputPower);
-      document.getElementById("cfgLoadPower").value = Math.round(system.inverterOutputPower);
-      document.getElementById("cfgTariffRate").value = system.tariffRate.toFixed(2);
-
-      document.getElementById("cfgHaUrl").value = haConfig.url;
-      document.getElementById("cfgHaToken").value = haConfig.token;
-
-      switchModalTab(initialTab);
-      document.getElementById("configModal").style.display = "flex";
-    }
-
-    function closeConfigModal() {
-      document.getElementById("configModal").style.display = "none";
-    }
-
-    function onSocSlider(val) {
-      document.getElementById("lblSocDisplay").innerText = val + "%";
-      system.batterySoc = parseFloat(val);
-      updateDashboardUI();
-    }
-
-    function setSocPreset(val) {
-      document.getElementById("cfgSocSlider").value = val;
-      onSocSlider(val);
-    }
-
-    function setBatAmpsPreset(val) {
-      document.getElementById("cfgBatAmps").value = val.toFixed(1);
-      system.batteryAmps = parseFloat(val);
-      rebuildParticles();
-      updateDashboardUI();
-    }
-
-    function onSolarModeChange() {
-      const mode = document.getElementById("cfgSolarMode").value;
-      const grp = document.getElementById("groupManualSolar");
-      if (grp) grp.style.display = mode === "manual" ? "flex" : "none";
-    }
-
-    async function saveAllSettings() {
-      userSettings.manualSoc = parseFloat(document.getElementById("cfgSocSlider").value) || 85;
-      userSettings.lockSoc = document.getElementById("cfgLockSoc").checked;
-      userSettings.batteryAmps = parseFloat(document.getElementById("cfgBatAmps").value) || 21.0;
-      userSettings.batteryVoltage = parseFloat(document.getElementById("cfgBatVolt").value) || 13.5;
-      userSettings.batteryCapacity = parseFloat(document.getElementById("cfgBatCap").value) || 200;
-      userSettings.solarMode = document.getElementById("cfgSolarMode").value;
-      userSettings.manualSolarWatts = parseFloat(document.getElementById("cfgSolarWatts").value) || 320;
-      userSettings.gridOnline = document.getElementById("cfgGridOnline").value === "true";
-      userSettings.inverterInputPower = parseFloat(document.getElementById("cfgGridPower").value) || 0;
-      userSettings.inverterOutputPower = parseFloat(document.getElementById("cfgLoadPower").value) || 120;
-      userSettings.tariffRate = parseFloat(document.getElementById("cfgTariffRate").value) || 15.00;
-
-      haConfig.url = document.getElementById("cfgHaUrl").value.trim().replace(/\/$/, "");
-      haConfig.token = document.getElementById("cfgHaToken").value.trim();
-      localStorage.setItem("sako_ha_url", haConfig.url);
-      localStorage.setItem("sako_ha_token", haConfig.token);
-
-      localStorage.setItem("sako_user_settings", JSON.stringify(userSettings));
-      fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userSettings)
-      }).catch(e => console.log('Bypassed server settings sync'));
-
-      system.batterySoc = userSettings.manualSoc;
-      system.batteryAmps = userSettings.batteryAmps;
-      system.batteryVoltage = userSettings.batteryVoltage;
-      system.gridOnline = userSettings.gridOnline;
-      system.inverterInputPower = userSettings.inverterInputPower;
-      system.inverterOutputPower = userSettings.inverterOutputPower;
-      system.tariffRate = userSettings.tariffRate;
-
-      closeConfigModal();
-      rebuildParticles();
-      updateDashboardUI();
-      pollHomeAssistant();
-      alert("✅ Settings saved successfully! Battery SOC updated to " + userSettings.manualSoc + "%.");
-    }
-
-    function switchNav(tabName) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function triggerSimulationToggle() {
-      pollHomeAssistant();
-      alert("↻ Telemetry data refresh triggered.");
-    }
-
-    function exportDataJson() {
-      const payload = JSON.stringify({ timestamp: new Date().toISOString(), telemetry: system, settings: userSettings }, null, 2);
-      const blob = new Blob([payload], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `sako_solar_telemetry_${Date.now()}.json`;
-      a.click();
-    }
-
-    // Initial Trigger
-    pollHomeAssistant();
-  </script>
-</body>
-</html>
+        for 
