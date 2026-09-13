@@ -1,741 +1,96 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SAKO SOLAR PRO INTELLIGENCE</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;800&family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Sako Lite V10</title>
 <style>
-:root {
-  --bg: #050811;
-  --card: #0b1120;
-  --card-sub: #131c31;
-  --border: #1e2e4a;
-  --text: #f8fafc;
-  --muted: #8493ad;
-  --green: #10b981;
-  --gold: #f59e0b;
-  --blue: #3b82f6;
-  --red: #ef4444;
-  --font-mono: 'Chakra Petch', monospace;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', 'Hind Siliguri', sans-serif;
-  min-height: 100vh;
-  padding-bottom: 85px;
-  overflow-x: hidden;
-}
-.glow-bg {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background: radial-gradient(circle 500px at 80% -10%, rgba(245,158,11,0.08), transparent 70%),
-              radial-gradient(circle 450px at -10% 40%, rgba(16,185,129,0.06), transparent 70%),
-              radial-gradient(circle 400px at 100% 80%, rgba(59,130,246,0.06), transparent 70%);
-}
-.wrap { max-width: 520px; margin: 0 auto; padding: 14px; position: relative; z-index: 1; }
-
-/* TOP LIVE HUD */
-.hud-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px);
-  border: 1px solid var(--border); border-radius: 16px; padding: 10px 14px; margin-bottom: 14px;
-}
-.live-status { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; }
-.pulse-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 1.8s infinite; }
-.pulse-dot.offline { background: var(--red); box-shadow: 0 0 10px var(--red); animation: none; }
-@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
-.hud-controls { display: flex; align-items: center; gap: 8px; }
-.hud-btn {
-  width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--card-sub); color: var(--text); font-size: 14px; display: flex;
-  align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
-}
-.hud-btn:hover { border-color: var(--gold); }
-
-/* HERO COMMAND DISPLAY */
-.hero-card {
-  background: linear-gradient(165deg, rgba(23, 35, 60, 0.75), rgba(15, 23, 42, 0.9));
-  border: 1px solid var(--border); border-radius: 20px; padding: 18px; position: relative;
-  overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); margin-bottom: 14px;
-}
-.hero-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.hero-label { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: var(--muted); }
-.hero-badge { font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; }
-.badge-grid-on { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid var(--green); }
-.badge-grid-off { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid var(--red); }
-.hero-main-val { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 10px 0; }
-.hero-main-val .num { font-size: 48px; font-weight: 800; font-family: var(--font-mono); }
-.hero-main-val .unit { font-size: 18px; font-weight: 700; color: var(--muted); }
-.hero-subline { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-top: 6px; }
-
-/* 4-METRIC MATRIX */
-.matrix-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
-.matrix-cell { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; }
-.matrix-cell small { display: block; font-size: 10px; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
-.matrix-cell b { display: block; font-size: 22px; font-weight: 800; font-family: var(--font-mono); }
-.matrix-cell span { font-size: 11px; color: var(--muted); }
-
-/* POWER FLOW SVG */
-.flow-container { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 16px; margin-bottom: 14px; text-align: center; }
-.flow-title { font-size: 11px; font-weight: 800; color: var(--muted); margin-bottom: 10px; text-align: left; }
-svg { width: 100%; height: auto; max-height: 220px; }
-.flow-line { stroke-width: 2.5; stroke-dasharray: 6, 6; animation: dash 1s linear infinite; }
-.flow-line.idle { stroke: #2a3b5c !important; stroke-dasharray: none; animation: none; }
-.flow-line.rev { animation-direction: reverse; }
-@keyframes dash { to { stroke-dashoffset: -12; } }
-.fnode { font-size: 10px; font-weight: 700; fill: #f8fafc; font-family: 'Inter', sans-serif; }
-.fsub { font-size: 9px; fill: var(--muted); font-family: var(--font-mono); }
-
-/* OUTAGE MONITOR */
-.outage-box { background: linear-gradient(145deg, #17111e, #1a0f18); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 16px; padding: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
-.outage-box.healthy { background: var(--card); border-color: var(--border); }
-.outage-info h4 { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
-.outage-info p { font-size: 11px; color: var(--muted); }
-
-/* APPLIANCE CARDS */
-.app-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-.app-left { display: flex; align-items: center; gap: 12px; }
-.app-icon { font-size: 24px; width: 40px; height: 40px; border-radius: 12px; background: var(--card-sub); display: flex; align-items: center; justify-content: center; }
-.app-name { font-size: 13px; font-weight: 700; }
-.app-desc { font-size: 11px; color: var(--muted); }
-.status-pill { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 12px; }
-.pill-ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid var(--green); }
-.pill-avoid { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid var(--red); }
-.pill-caution { background: rgba(245, 158, 11, 0.15); color: var(--gold); border: 1px solid var(--gold); }
-
-/* PRO CARDS & TABS */
-.tab-pane { display: none; }
-.tab-pane.active { display: block; }
-.bottom-tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(11, 17, 32, 0.95); backdrop-filter: blur(16px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 6px; z-index: 50; max-width: 520px; margin: 0 auto; }
-.tab-button { background: none; border: none; color: var(--muted); font-size: 10px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex: 1; }
-.tab-button.active { color: var(--gold); }
-.tab-button .icon { font-size: 18px; }
-
-.pro-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
-.pro-card-title { font-size: 12px; font-weight: 800; color: var(--muted); margin-bottom: 12px; display: flex; justify-content: space-between; }
-.pro-row { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
-.pro-row:last-child { border-bottom: none; }
-.chart-wrapper { height: 180px; position: relative; margin-top: 10px; }
-.note-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 8px; display: block; }
-
-.text-green { color: var(--green); }
-.text-gold { color: var(--gold); }
-.text-blue { color: var(--blue); }
-.text-red { color: var(--red); }
-
-/* MODALS */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.78); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
-.modal-overlay.open { display: flex; }
-.modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; max-width: 440px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px; }
-.btn { padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-sub); color: var(--text); font-weight: 700; cursor: pointer; }
-</style>
-</head>
-<body>
-<div class="glow-bg"></div>
-<div class="wrap">
-
-  <!-- TOP LIVE HUD -->
-  <div class="hud-bar">
-    <div class="live-status">
-      <div id="liveDot" class="pulse-dot"></div>
-      <span id="liveStatusText">CLOUD SYNC LIVE</span>
-      <span style="color: var(--muted); font-family: var(--font-mono); font-size: 10px;" id="packetCount">· 0 pkts</span>
-    </div>
-    <div class="hud-controls">
-      <button class="hud-btn" id="btnRefresh" title="Refresh">↻</button>
-      <button class="hud-btn" id="btnNotif" title="Alerts">🔔</button>
-      <button class="hud-btn" id="btnSet" title="Settings">⚙</button>
-    </div>
-  </div>
-
-  <!-- ================= TAB 1 · DASHBOARD ================= -->
-  <div id="tabDashboard" class="tab-pane active">
-    <!-- HERO -->
-    <div class="hero-card">
-      <div class="hero-top">
-        <span class="hero-label">HOUSE POWER · LIVE LOAD</span>
-        <span id="gridBadge" class="hero-badge badge-grid-on">GRID ACTIVE</span>
-      </div>
-      <div class="hero-main-val">
-        <span id="heroLoadWatt" class="num text-blue">0.0</span>
-        <span class="unit">Watt</span>
-      </div>
-      <div class="hero-subline">
-        <span>⚡ সোলার কভারেজ: <strong id="heroSolarRatio" class="text-gold">0%</strong></span>
-        <span>লোড ভোল্টেজ: <strong id="heroLoadVolt">0V</strong></span>
-      </div>
-
-      <!-- 4-METRIC MATRIX -->
-      <div class="matrix-grid">
-        <div class="matrix-cell">
-          <small>GRID IN</small>
-          <b id="matGridWatt" class="text-green">0W</b>
-          <span id="matGridAmp">0.0A</span>
-        </div>
-        <div class="matrix-cell">
-          <small>LOAD OUT</small>
-          <b id="matLoadWatt" class="text-blue">0W</b>
-          <span id="matLoadAmp">0.0A</span>
-        </div>
-        <div class="matrix-cell">
-          <small>SOLAR PV</small>
-          <b id="matSolarWatt" class="text-gold">0W</b>
-          <span id="matSolarSub">2x 400W REC</span>
-        </div>
-        <div class="matrix-cell">
-          <small>BATTERY</small>
-          <b id="matBattWatt" class="text-green">+0W</b>
-          <span id="matBattAmp">+0.0A</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- OUTAGE MONITOR -->
-    <div id="outageBox" class="outage-box healthy">
-      <div class="outage-info">
-        <h4 id="outageTitle">⚡ পল্লী বিদ্যুৎ গ্রিড সচল</h4>
-        <p id="outageSub">আজ লোডশেডিং: 0 বার · সচল: 0.0h</p>
-      </div>
-      <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 700;" id="outageTimer">220V</div>
-    </div>
-
-    <!-- POWER FLOW ANIMATION -->
-    <div class="flow-container">
-      <div class="flow-title">POWER FLOW · SAKO 2KVA (12V)</div>
-      <svg viewBox="0 0 340 220">
-        <line id="flGrid" class="flow-line idle" x1="85" y1="50" x2="145" y2="85" stroke="#10b981"/>
-        <line id="flSolar" class="flow-line idle" x1="255" y1="50" x2="195" y2="85" stroke="#f59e0b"/>
-        <line id="flBatt" class="flow-line idle" x1="85" y1="145" x2="145" y2="115" stroke="#10b981"/>
-        <line id="flLoad" class="flow-line idle" x1="255" y1="145" x2="195" y2="115" stroke="#3b82f6"/>
-        
-        <circle cx="170" cy="100" r="32" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
-        <text x="170" y="97" text-anchor="middle" style="font-size: 11px; font-weight: 800; fill: #fff;">SAKO</text>
-        <text x="170" y="109" text-anchor="middle" style="font-size: 8px; fill: var(--muted);">2KVA / 12V</text>
-
-        <text x="50" y="45" text-anchor="middle" class="fnode">⚡ GRID</text>
-        <text id="flGridW" x="50" y="58" text-anchor="middle" class="fsub">0W</text>
-        <text id="flGridA" x="50" y="68" text-anchor="middle" class="fsub">0.0A</text>
-
-        <text x="290" y="45" text-anchor="middle" class="fnode">☀️ SOLAR</text>
-        <text id="flSolarW" x="290" y="58" text-anchor="middle" class="fsub" fill="#f59e0b">0W</text>
-        <text x="290" y="68" text-anchor="middle" class="fsub">800W REC</text>
-
-        <text x="50" y="140" text-anchor="middle" class="fnode">🔋 BATTERY</text>
-        <text id="flBattW" x="50" y="153" text-anchor="middle" class="fsub" fill="#10b981">+0W</text>
-        <text id="flBattA" x="50" y="163" text-anchor="middle" class="fsub">+0.0A</text>
-
-        <text x="290" y="140" text-anchor="middle" class="fnode">🏠 LOAD</text>
-        <text id="flLoadW" x="290" y="153" text-anchor="middle" class="fsub" fill="#3b82f6">0W</text>
-        <text id="flLoadA" x="290" y="163" text-anchor="middle" class="fsub">0.0A</text>
-      </svg>
-    </div>
-
-    <!-- APPLIANCE SCHEDULING ADVISOR -->
-    <div class="pro-card">
-      <div class="pro-card-title"><span>⚡ APPLIANCE SMART ADVISOR</span><span id="clockHeader">--:--</span></div>
-      
-      <div class="app-card">
-        <div class="app-left">
-          <div class="app-icon">🍚</div>
-          <div>
-            <div class="app-name">রাইস কুকার (৭০০W)</div>
-            <div class="app-desc" id="appCookerDesc">সোলার স্ট্যাটাস যাচাই হচ্ছে...</div>
-          </div>
-        </div>
-        <span id="appCookerPill" class="status-pill pill-avoid">CHECKING</span>
-      </div>
-
-      <div class="app-card">
-        <div class="app-left">
-          <div class="app-icon">🧺</div>
-          <div>
-            <div class="app-name">ওয়াশিং মেশিন (কোল্ড)</div>
-            <div class="app-desc" id="appWashDesc">সোলার স্ট্যাটাস যাচাই হচ্ছে...</div>
-          </div>
-        </div>
-        <span id="appWashPill" class="status-pill pill-caution">CHECKING</span>
-      </div>
-
-      <div class="app-card">
-        <div class="app-left">
-          <div class="app-icon">💧</div>
-          <div>
-            <div class="app-name">পানির মোটর (১ HP)</div>
-            <div class="app-desc" id="appPumpDesc">হাই কারেন্ট সার্জ চেক হচ্ছে...</div>
-          </div>
-        </div>
-        <span id="appPumpPill" class="status-pill pill-avoid">CHECKING</span>
-      </div>
-    </div>
-
-    <!-- LIVE 20-POINT TREND CHART -->
-    <div class="pro-card">
-      <div class="pro-card-title"><span>📈 LIVE POWER TREND</span></div>
-      <div class="chart-wrapper"><canvas id="chartLiveTrend"></canvas></div>
-    </div>
-  </div>
-
-  <!-- ================= TAB 2 · SOLAR & WX ================= -->
-  <div id="tabSolar" class="tab-pane">
-    <div class="pro-card">
-      <div class="pro-card-title"><span>☀️ REC 400W HETEROJUNCTION ARRAY</span><span>2 PANELS · 800W</span></div>
-      <div class="pro-row"><span>প্যানেল ব্র্যান্ড ও মডেল</span><b>REC Alpha Pure-R (HJT)</b></div>
-      <div class="pro-row"><span>টেস্টিং পিক জেনারেশন</span><b class="text-gold">650 Watt Peak</b></div>
-      <div class="pro-row"><span>লো-লাইট ও ক্লাউড পারফরম্যান্স</span><b class="text-green">অসাধারণ (HJT টেকনোলজি)</b></div>
-      <div class="pro-row"><span>প্যানেল টিল্ট ও অ্যাজিমুথ</span><b>10° South (চিলাহাটি)</b></div>
-    </div>
-
-    <div class="pro-card">
-      <div class="pro-card-title"><span>🌤️ CLEAR-SKY GENERATION PROFILE</span></div>
-      <div class="chart-wrapper"><canvas id="chartHourlySolar"></canvas></div>
-    </div>
-  </div>
-
-  <!-- ================= TAB 3 · BATTERY ================= -->
-  <div id="tabBattery" class="tab-pane">
-    <div class="pro-card">
-      <div class="pro-card-title">
-        <span>🔋 12V BATTERY INTELLIGENCE</span>
-        <span id="battStatePill" class="status-pill pill-ready">CHARGING</span>
-      </div>
-      
-      <!-- BATTERY MANUAL EDIT HEADER -->
-      <div style="display:flex; justify-content:space-between; align-items:center; margin: 10px 0;">
-        <div style="display:flex; align-items:baseline; gap:8px;">
-          <span style="font-size:44px; font-weight:800; font-family:var(--font-mono); color:var(--green);" id="battSocNum">85</span>
-          <span style="font-size:16px; font-weight:700; color:var(--muted);">% SoC</span>
-        </div>
-        <button onclick="openSettings()" style="background:rgba(16,185,129,0.15); border:1px solid var(--green); color:var(--green); padding:6px 12px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
-          <span>✏️</span> % এডিট / সেট করুন
-        </button>
-      </div>
-
-      <div style="height:12px; background: #070b14; border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:14px;">
-        <div id="battSocBar" style="width:85%; height:100%; background:var(--green); transition:0.5s;"></div>
-      </div>
-      <div class="pro-row"><span>লাইভ ব্যাটারি কারেন্ট</span><b id="battCurrentAmp" class="text-green">+21.0 A (সোলার চার্জিং)</b></div>
-      <div class="pro-row"><span>চার্জিং পাওয়ার</span><b id="battChargeWatt" class="text-green">277 W</b></div>
-      <div class="pro-row"><span>ডিসচার্জিং পাওয়ার</span><b id="battDischargeWatt" class="text-red">0 W</b></div>
-      <div class="pro-row"><span>বর্তমান লোডে ব্যাকআপ সময়</span><b id="battRuntimeHours" class="text-gold">--</b></div>
-      <div class="pro-row"><span>ফুল চার্জ হতে আনুমানিক সময়</span><b id="battTimeToFull">~ 1.1 ঘণ্টা</b></div>
-    </div>
-
-    <div class="pro-card">
-      <div class="pro-card-title"><span>⚠️ 12V HIGH-CURRENT CAUTION</span></div>
-      <span class="note-text">
-        আপনার ইনভার্টারটি একটি ১২ ভোল্ট (12V) সিস্টেম। ১২ ভোল্ট সিস্টেমে ১০০০W+ লোড দিলে ব্যাটারি থেকে প্রায় ৮০-১০০ অ্যাম্পিয়ার কারেন্ট টানা হয়। ব্যাটারির দীর্ঘায়ুর জন্য নিয়মিত লোড ৫০০-৭০০ ওয়াটের মধ্যে রাখা উত্তম।
-      </span>
-    </div>
-  </div>
-
-  <!-- ================= TAB 4 · FINANCIAL ================= -->
-  <div id="tabBill" class="tab-pane">
-    <div class="pro-card">
-      <div class="pro-card-title"><span>💰 FINANCIAL SAVINGS (BDT)</span><span>TARIFF: ৳ 15.00</span></div>
-      <div class="pro-row"><span>আজ সোলারে বিদ্যুৎ সেভ</span><b id="finSolSavingToday" class="text-green">৳ 0.00</b></div>
-      <div class="pro-row"><span>এলপিজি (LPG) গ্যাস সাশ্রয়</span><b class="text-green">~ ৳ ৩৫০ - ৫০০ / মাস</b></div>
-    </div>
-  </div>
-
-  <!-- ================= TAB 5 · HISTORY ================= -->
-  <div id="tabHistory" class="tab-pane">
-    <div class="pro-card">
-      <div class="pro-card-title"><span>📊 SYSTEM REGISTRY</span></div>
-      <div class="pro-row"><span>সোলার প্যানেল</span><b>2x REC 400W (800W)</b></div>
-      <div class="pro-row"><span>ইনভার্টার কোর</span><b>SAKO 2KVA / 12V</b></div>
-      <div class="pro-row"><span>স্মার্ট মনিটরিং</span><b>Tuya Cloud OpenAPI v2</b></div>
-      <div class="pro-row"><span>লোকেশন</span><b>খানকা শরীফ জামে মসজিদ, চিলাহাটি</b></div>
-    </div>
-  </div>
-</div>
-
-<!-- BOTTOM TAB BAR -->
-<div class="bottom-tabbar">
-  <button class="tab-button active" onclick="switchTab('tabDashboard')"><span class="icon">🏠</span>Overview</button>
-  <button class="tab-button" onclick="switchTab('tabSolar')"><span class="icon">☀️</span>Solar &amp; Wx</button>
-  <button class="tab-button" onclick="switchTab('tabBattery')"><span class="icon">🔋</span>Battery</button>
-  <button class="tab-button" onclick="switchTab('tabBill')"><span class="icon">💰</span>Financial</button>
-  <button class="tab-button" onclick="switchTab('tabHistory')"><span class="icon">📊</span>History</button>
-</div>
-
-<!-- SETTINGS MODAL -->
-<div id="settingsModal" class="modal-overlay">
-  <div class="modal-box">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
-      <h3 style="font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px;">
-        <span style="color:var(--gold);">⚙️</span> সিস্টেম ও ব্যাটারি সেটিংস
-      </h3>
-      <button onclick="closeSettings()" style="background:var(--card-sub); border:1px solid var(--border); color:var(--muted); font-size:18px; width:30px; height:30px; border-radius:8px; cursor:pointer;">&times;</button>
-    </div>
-
-    <!-- Battery SoC Slider & Input -->
-    <div style="background:var(--card-sub); padding:14px; border-radius:14px; border:1px solid var(--border); margin-bottom:14px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <label style="font-size:13px; font-weight:800; color:var(--green);">🔋 ব্যাটারি চার্জ লেভেল (% SoC)</label>
-        <span style="font-family:var(--font-mono); font-size:16px; font-weight:800; color:var(--green);" id="socPreviewVal">85%</span>
-      </div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <input type="range" id="cfgBattSoc" min="5" max="100" value="85" style="flex:1; accent-color:var(--green); cursor:pointer;" oninput="onSocSliderChange(this.value)">
-        <input type="number" id="cfgBattSocNum" min="5" max="100" value="85" style="width:65px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-weight:800; font-family:var(--font-mono); text-align:center;" oninput="onSocNumChange(this.value)">
-      </div>
-      <span class="note-text" style="font-size:11px; margin-top:6px;">আপনার ব্যাটারির বর্তমান আনুমানিক চার্জ লেভেল এখানে সেট করুন। এটি সেভ থাকবে।</span>
-    </div>
-
-    <!-- Solar to Battery Charging Current (Ampere) -->
-    <div style="margin-bottom:14px;">
-      <label style="font-size:12px; font-weight:700; display:block; margin-bottom:6px;">⚡ সোলার থেকে ব্যাটারি চার্জ কারেন্ট (Ampere)</label>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <input type="number" id="cfgChargeAmp" min="0" max="60" step="0.5" value="21.0" style="width:110px; padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--card-sub); color:var(--text); font-weight:700; font-family:var(--font-mono);">
-        <span style="font-size:13px; font-weight:700; color:var(--gold);">Ampere (A)</span>
-      </div>
-      <span class="note-text" style="font-size:11px; margin-top:4px;">সোলার কন্ট্রোলার এখন ব্যাটারিতে যত অ্যাম্পিয়ার পাঠাচ্ছে (যেমন ২০-২২A)। ১২ ভোল্ট সিস্টেমে ২০A = ~২৭০ ওয়াট সোলার পাওয়ার।</span>
-    </div>
-
-    <!-- Battery Capacity (Ah) -->
-    <div style="margin-bottom:14px;">
-      <label style="font-size:12px; font-weight:700; display:block; margin-bottom:6px;">🪫 ব্যাটারি ব্যাংক ক্যাপাসিটি (Ah)</label>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <input type="number" id="cfgBattAh" min="40" max="500" step="10" value="150" style="width:110px; padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--card-sub); color:var(--text); font-weight:700; font-family:var(--font-mono);">
-        <span style="font-size:13px; font-weight:700; color:var(--muted);">Ah (12V ব্যাটারি)</span>
-      </div>
-    </div>
-
-    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
-      <button class="btn" onclick="closeSettings()">বাতিল</button>
-      <button class="btn" style="background:var(--green); color:#050811; font-weight:800;" onclick="saveSettings()">💾 সংরক্ষণ করুন</button>
-    </div>
-  </div>
-</div>
-
-<!-- TOAST ALERT -->
-<div id="toastAlert" style="position:fixed; bottom:95px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.95); border:1px solid var(--green); color:#fff; padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; z-index:1000; opacity:0; pointer-events:none; transition:opacity 0.3s ease;">
-  <span>✅</span> <span id="toastMsg">সেটিংস সফলভাবে সংরক্ষিত হয়েছে!</span>
-</div>
-
-<script>
-let liveChart = null;
-let hourlyChart = null;
-let packetCount = 0;
-let lastUpdateTs = Date.now();
-const maxPoints = 20;
-
-let userConfig = {
-  battSoc: 85,
-  chargeAmp: 21.0,
-  battAh: 150,
-  solarWatt: 800,
-  tariff: 15.0
-};
-
-function loadConfig() {
-  try {
-    const saved = localStorage.getItem('energy_mate_user_cfg');
-    if (saved) userConfig = Object.assign(userConfig, JSON.parse(saved));
-  } catch(e) {}
-  syncSettingsUI();
-}
-
-function syncSettingsUI() {
-  const soc = userConfig.battSoc;
-  document.getElementById('cfgBattSoc').value = soc;
-  document.getElementById('cfgBattSocNum').value = soc;
-  document.getElementById('socPreviewVal').innerText = soc + '%';
-  document.getElementById('cfgChargeAmp').value = userConfig.chargeAmp;
-  document.getElementById('cfgBattAh').value = userConfig.battAh;
-}
-
-function openSettings() {
-  syncSettingsUI();
-  document.getElementById('settingsModal').classList.add('open');
-}
-
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
-}
-
-function onSocSliderChange(val) {
-  document.getElementById('cfgBattSocNum').value = val;
-  document.getElementById('socPreviewVal').innerText = val + '%';
-}
-
-function onSocNumChange(val) {
-  val = Math.max(5, Math.min(100, parseFloat(val) || 85));
-  document.getElementById('cfgBattSoc').value = val;
-  document.getElementById('socPreviewVal').innerText = val + '%';
-}
-
-function showToast(msg) {
-  const toast = document.getElementById('toastAlert');
-  document.getElementById('toastMsg').innerText = msg;
-  toast.style.opacity = '1';
-  setTimeout(() => { toast.style.opacity = '0'; }, 2500);
-}
-
-function saveSettings() {
-  userConfig.battSoc = Math.max(5, Math.min(100, parseFloat(document.getElementById('cfgBattSocNum').value) || 85));
-  userConfig.chargeAmp = Math.max(0, parseFloat(document.getElementById('cfgChargeAmp').value) || 21.0);
-  userConfig.battAh = Math.max(20, parseFloat(document.getElementById('cfgBattAh').value) || 150);
-
-  try {
-    localStorage.setItem('energy_mate_user_cfg', JSON.stringify(userConfig));
-  } catch(e) {}
-
-  fetch('/api/settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(userConfig)
-  }).catch(e => {});
-
-  closeSettings();
-  showToast('সেটিংস সফলভাবে সংরক্ষিত হয়েছে!');
-  fetchLiveData();
-}
-
-function switchTab(tabId) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  if (event && event.currentTarget) event.currentTarget.classList.add('active');
-  window.scrollTo(0,0);
-}
-
-function initCharts() {
-  const ctx = document.getElementById('chartLiveTrend').getContext('2d');
-  liveChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: [],
-      datasets: [
-        { label: 'Solar PV (W)', borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.15)', borderWidth: 2.5, fill: true, tension: 0.3, data: [] },
-        { label: 'House Load (W)', borderColor: '#3b82f6', borderWidth: 2, fill: false, tension: 0.3, data: [] },
-        { label: 'Grid In (W)', borderColor: '#10b981', borderDash: [4, 4], borderWidth: 1.5, fill: false, tension: 0.3, data: [] }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: {
-        x: { grid: { color: '#1e2e4a' }, ticks: { color: '#8493ad' } },
-        y: { grid: { color: '#1e2e4a' }, ticks: { color: '#8493ad' }, beginAtZero: true }
-      },
-      plugins: { legend: { labels: { color: '#f8fafc', font: { family: 'Inter' } } } }
-    }
-  });
-
-  const ctxH = document.getElementById('chartHourlySolar').getContext('2d');
-  hourlyChart = new Chart(ctxH, {
-    type: 'bar',
-    data: {
-      labels: ['6AM','7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM'],
-      datasets: [{
-        label: 'Clear Sky Potential (W)',
-        backgroundColor: 'rgba(245, 158, 11, 0.4)',
-        borderColor: '#f59e0b',
-        borderWidth: 1,
-        data: [0, 90, 270, 540, 750, 915, 980, 960, 840, 630, 360, 135, 0]
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: {
-        x: { grid: { color: '#1e2e4a' }, ticks: { color: '#8493ad' } },
-        y: { grid: { color: '#1e2e4a' }, ticks: { color: '#8493ad' } }
-      },
-      plugins: { legend: { labels: { color: '#f8fafc' } } }
-    }
-  });
-}
-
-function updateApplianceAdvisor(solarW, gridOnline, loadW) {
-  const cookerPill = document.getElementById('appCookerPill');
-  const cookerDesc = document.getElementById('appCookerDesc');
-  if (solarW >= 650) {
-    cookerPill.className = 'status-pill pill-ready'; cookerPill.innerText = '100% SOLAR';
-    cookerDesc.innerText = 'ফ্রি সোলারে ভাত রান্না করুন';
-  } else if (gridOnline) {
-    cookerPill.className = 'status-pill pill-ready'; cookerPill.innerText = 'GRID SHARED';
-    cookerDesc.innerText = 'সোলার + গ্রিড শেয়ারে চলবে';
-  } else {
-    cookerPill.className = 'status-pill pill-avoid'; cookerPill.innerText = 'BATTERY DRAIN';
-    cookerDesc.innerText = 'গ্রিড ছাড়া এড়ানো ভালো';
-  }
-
-  const washPill = document.getElementById('appWashPill');
-  const washDesc = document.getElementById('appWashDesc');
-  if (solarW >= 450 || gridOnline) {
-    washPill.className = 'status-pill pill-ready'; washPill.innerText = 'SAFE';
-    washDesc.innerText = 'কোল্ড ওয়াশ চালানো নিরাপদ';
-  } else {
-    washPill.className = 'status-pill pill-caution'; washPill.innerText = 'CAUTION';
-    washDesc.innerText = 'ব্যাটারি থেকে লোড নেবে';
-  }
-
-  const pumpPill = document.getElementById('appPumpPill');
-  const pumpDesc = document.getElementById('appPumpDesc');
-  if (gridOnline) {
-    pumpPill.className = 'status-pill pill-ready'; pumpPill.innerText = 'SAFE (GRID)';
-    pumpDesc.innerText = 'গ্রিড আছে, মোটর চালান';
-  } else {
-    pumpPill.className = 'status-pill pill-avoid'; pumpPill.innerText = 'AVOID (SURGE)';
-    pumpDesc.innerText = 'ব্যাটারিতে বড় সার্জ পড়বে';
-  }
-}
-
-async function fetchLiveData() {
-  try {
-    const res = await fetch('/api/states');
-    const states = await res.json();
-    packetCount++;
-    lastUpdateTs = Date.now();
-
-    const getSt = (id) => {
-      const o = states.find(x => x.entity_id === id);
-      return o ? o.state : '';
-    };
-
-    const loadW = parseFloat(getSt('sensor.16a_output_line_power')) || 0;
-    const gridW = parseFloat(getSt('sensor.20a_charging_line_power')) || 0;
-    const isGrid = getSt('binary_sensor.energy_mate_grid_available') === 'on' || getSt('binary_sensor.energy_mate_v4_grid_present') === 'on';
-
-    const loadV = parseFloat(getSt('sensor.16a_output_line_voltage')) || 228;
-    const loadA = parseFloat(getSt('sensor.16a_output_line_current')) || 0;
-    const gridA = parseFloat(getSt('sensor.20a_charging_line_current')) || 0;
-    const gridV = parseFloat(getSt('sensor.20a_charging_line_voltage')) || 228;
-
-    const sunState = getSt('sun.sun');
-    const nowHour = new Date().getHours();
-    const isDay = sunState === 'above_horizon' || (nowHour >= 6 && nowHour < 18);
-
-    // বাস্তব সোলার ও ব্যাটারি চার্জিং হিসাব
-    let chW = 0, disW = 0, battAmp = 0, pvW = 0;
-    if (isDay) {
-      battAmp = userConfig.chargeAmp;
-      chW = battAmp * 13.2; // ~277W
-      pvW = loadW + chW;    // মোট সোলার পাওয়ার = লোড + ব্যাটারি চার্জিং (~280-400W)
-    } else {
-      pvW = 0;
-      if (!isGrid) { disW = loadW; battAmp = -(loadW / 12.0); }
-    }
-
-    document.getElementById('packetCount').innerText = '· ' + packetCount + ' pkts';
-    document.getElementById('liveDot').className = 'pulse-dot' + (isGrid ? '' : ' offline');
-    document.getElementById('liveStatusText').innerText = isGrid ? 'CLOUD SYNC LIVE' : 'LOAD SHEDDING (OFF)';
-
-    document.getElementById('heroLoadWatt').innerText = loadW.toFixed(1);
-    document.getElementById('heroLoadVolt').innerText = loadV.toFixed(0) + 'V · ' + loadA.toFixed(1) + 'A';
-    const ratio = loadW > 0 ? Math.min(100, Math.round((pvW / loadW) * 100)) : 100;
-    document.getElementById('heroSolarRatio').innerText = ratio + '%';
-
-    const badge = document.getElementById('gridBadge');
-    badge.className = 'hero-badge ' + (isGrid ? 'badge-grid-on' : 'badge-grid-off');
-    badge.innerText = isGrid ? '⚡ GRID ON' : '⚠️ GRID OFF (BATTERY)';
-
-    document.getElementById('matGridWatt').innerText = gridW.toFixed(0) + 'W';
-    document.getElementById('matGridAmp').innerText = gridA.toFixed(1) + 'A';
-    document.getElementById('matLoadWatt').innerText = loadW.toFixed(0) + 'W';
-    document.getElementById('matLoadAmp').innerText = loadA.toFixed(1) + 'A';
-    document.getElementById('matSolarWatt').innerText = pvW.toFixed(0) + 'W';
-    
-    const battAct = chW > disW ? chW : disW;
-    document.getElementById('matBattWatt').innerText = (chW > disW ? '+' : '-') + battAct.toFixed(0) + 'W';
-    document.getElementById('matBattWatt').className = chW > disW ? 'text-green' : 'text-red';
-    document.getElementById('matBattAmp').innerText = (chW > disW ? '+' : '-') + Math.abs(battAmp).toFixed(1) + 'A';
-
-    const outBox = document.getElementById('outageBox');
-    outBox.className = 'outage-box ' + (isGrid ? 'healthy' : '');
-    document.getElementById('outageTitle').innerText = isGrid ? '⚡ পল্লী বিদ্যুৎ গ্রিড সচল' : '⚠️ বিদ্যুৎ নেই - ব্যাটারি ব্যাকআপ চলছে';
-    document.getElementById('outageTimer').innerText = (isGrid ? gridV.toFixed(0) + 'V' : 'LOAD ' + loadW.toFixed(0) + 'W');
-
-    document.getElementById('flGridW').innerText = gridW.toFixed(0) + 'W';
-    document.getElementById('flGridA').innerText = gridA.toFixed(1) + 'A';
-    document.getElementById('flSolarW').innerText = pvW.toFixed(0) + 'W';
-    document.getElementById('flLoadW').innerText = loadW.toFixed(0) + 'W';
-    document.getElementById('flLoadA').innerText = loadA.toFixed(1) + 'A';
-    document.getElementById('flBattW').innerText = (chW > disW ? '+' : '-') + battAct.toFixed(0) + 'W';
-    document.getElementById('flBattA').innerText = (chW > disW ? '+' : '-') + Math.abs(battAmp).toFixed(1) + 'A';
-
-    const setFlow = (id, active, rev) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.classList.toggle('idle', !active);
-      el.classList.toggle('rev', !!(rev && active));
-    };
-    setFlow('flGrid', gridW > 10, false);
-    setFlow('flSolar', pvW > 10, false);
-    setFlow('flBatt', battAct > 10, chW > disW);
-    setFlow('flLoad', loadW > 10, true);
-
-    // BATTERY TAB UPDATE
-    const soc = userConfig.battSoc;
-    const socEl = document.getElementById('battSocNum');
-    if (socEl) socEl.innerText = soc.toFixed(0);
-    const barEl = document.getElementById('battSocBar');
-    if (barEl) {
-      barEl.style.width = soc + '%';
-      barEl.style.background = soc >= 60 ? 'var(--green)' : (soc >= 30 ? 'var(--gold)' : 'var(--red)');
-    }
-    const currAmpEl = document.getElementById('battCurrentAmp');
-    if (currAmpEl) {
-      currAmpEl.innerText = (chW > disW ? '+' : '-') + Math.abs(battAmp).toFixed(1) + ' A' + (chW > disW ? ' (সোলার চার্জিং)' : ' (লোড ড্রেন)');
-      currAmpEl.style.color = chW > disW ? 'var(--green)' : 'var(--red)';
-    }
-    const chWEl = document.getElementById('battChargeWatt');
-    if (chWEl) chWEl.innerText = chW.toFixed(0) + ' W';
-    const disWEl = document.getElementById('battDischargeWatt');
-    if (disWEl) disWEl.innerText = disW.toFixed(0) + ' W';
-
-    const ttfEl = document.getElementById('battTimeToFull');
-    if (ttfEl) {
-      if (soc >= 98) {
-        ttfEl.innerText = 'ফুল চার্জড (Float)';
-      } else if (chW > 10 && battAmp > 0) {
-        const remAh = userConfig.battAh * ((100 - soc) / 100.0);
-        ttfEl.innerText = '~ ' + (remAh / battAmp).toFixed(1) + ' ঘণ্টা';
-      }
-    }
-
-    updateApplianceAdvisor(pvW, isGrid, loadW);
-
-    const clk = document.getElementById('clockHeader');
-    if (clk) clk.innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-
-    if (liveChart) {
-      const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-      if (liveChart.data.labels.length >= maxPoints) {
-        liveChart.data.labels.shift();
-        liveChart.data.datasets.forEach(d => d.data.shift());
-      }
-      liveChart.data.labels.push(ts);
-      liveChart.data.datasets[0].data.push(pvW);
-      liveChart.data.datasets.data.push(loadW);
-      liveChart.data.datasets.data.push(gridW);
-      liveChart.update();
-    }
-
-  } catch (err) {
-    document.getElementById('liveDot').className = 'pulse-dot offline';
-    document.getElementById('liveStatusText').innerText = 'CONNECTION ERROR';
-  }
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  loadConfig();
-  initCharts();
-  fetchLiveData();
-  setInterval(fetchLiveData, 4000);
-
-  const btnSet = document.getElementById('btnSet');
-  if (btnSet) btnSet.addEventListener('click', openSettings);
-  const btnRefresh = document.getElementById('btnRefresh');
-  if (btnRefresh) btnRefresh.addEventListener('click', () => { fetchLiveData(); showToast('তথ্য রিফ্রেশ করা হয়েছে'); });
-  const btnNotif = document.getElementById('btnNotif');
-  if (btnNotif) btnNotif.addEventListener('click', () => { showToast('🔔 সব প্যারামিটার স্বাভাবিক অবস্থায় আছে'); });
-});
-</script>
-</body>
-</html>
+:root{--bg:#0b0e14;--card:#141a26;--card2:#1a2231;--line:#232d40;--txt:#f2f5fa;--mut:#8b96ab;--gold:#f5c451;--grn:#34d399;--blu:#60a5fa;--org:#fb923c;--red:#f87171}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+.wrap{max-width:400px;margin:0 auto;padding:12px 12px 92px;width:100%}
+html{overflow-x:hidden}
+.netb{position:sticky;top:0;z-index:60;margin:0 auto 10px;width:100%;max-width:400px;padding:8px 14px;font-size:11px;font-weight:700;text-align:center}
+.netb.warn{background:rgba(251,146,60,.14);color:var(--org);border-bottom:1px solid rgba(251,146,60,.3)}
+.netb.err{background:rgba(248,113,113,.14);color:var(--red);border-bottom:1px solid rgba(248,113,113,.35)}
+.netb.ok{background:rgba(52,211,153,.10);color:var(--grn);border-bottom:1px solid rgba(52,211,153,.25)}
+.pill{font-size:10px;font-weight:800;padding:5px 10px;border-radius:99px;letter-spacing:.06em;white-space:nowrap}
+.pill.on{background:rgba(52,211,153,.22);color:var(--grn);border:1px solid rgba(52,211,153,.7);box-shadow:0 0 12px rgba(52,211,153,.25)}
+.pill.off{background:rgba(248,113,113,.22);color:var(--red);border:1px solid rgba(248,113,113,.7);box-shadow:0 0 12px rgba(248,113,113,.25)}
+.pill.warn{background:rgba(251,146,60,.15);color:var(--org);border:1px solid rgba(251,146,60,.4)}
+.pill.wait{background:rgba(139,150,171,.15);color:var(--mut);border:1px solid rgba(139,150,171,.35)}
+.icobtn{width:36px;height:36px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:16px;cursor:pointer}
+.icobtn.sm{width:30px;height:30px;font-size:14px;border-radius:10px}
+.btn{padding:9px 14px;border-radius:11px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-weight:800;font-size:13px;cursor:pointer}
+.btn.gold{background:rgba(245,196,81,.15);border-color:rgba(245,196,81,.5);color:var(--gold)}
+.btn.ghost{background:none}
+.testbtn{padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-weight:700;font-size:11px;cursor:pointer;margin-left:6px}
+.herotop{display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative;z-index:1}
+.hctl{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.hrow{display:flex;align-items:center;gap:6px}
+.hctl small{color:var(--mut);font-size:10px;white-space:nowrap}
+.bel{position:relative}
+#bellN{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;line-height:14px;text-align:center;border-radius:99px;display:none}
+.hero{background:linear-gradient(160deg,#1b2334,#101623);border:1px solid var(--line);border-radius:20px;padding:12px 16px 10px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,rgba(245,196,81,.22),transparent 70%);pointer-events:none}
+.hero .lbl{font-size:10px;letter-spacing:.14em;color:var(--mut);font-weight:800}
+.hero .big{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:0;transition:color .3s}
+.hero .big small{font-size:14px;color:var(--mut);font-weight:600}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:9px 0 3px}
+.g4i{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:7px 4px;text-align:center}
+.g4i small{display:block;color:var(--mut);font-size:8.5px;margin-bottom:3px;letter-spacing:.02em}
+.g4i b{font-size:12px;transition:color .3s}
+.g4i .ag{display:block;color:var(--mut);font-size:8px;margin-top:2px;min-height:9px;font-weight:600}
+.refimg{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);margin-top:8px;background:#fff;display:block}
+.flowcard{background:var(--card);border:1px solid var(--line);border-radius:22px;margin-top:12px;padding:10px 6px 4px}
+.flowcard svg{width:100%;height:auto;display:block}
+.fnode{font-size:9px;fill:var(--mut);font-weight:700;letter-spacing:.05em}
+.fval{font-size:13px;fill:var(--txt);font-weight:800}
+.fline{fill:none;stroke-width:3;stroke-linecap:round;stroke-dasharray:7 7;animation:dash 1s linear infinite}
+.fline.idle{animation:none;opacity:.18;stroke-dasharray:none}
+.fline.rev{animation-direction:reverse}
+@keyframes dash{to{stroke-dashoffset:-14}}
+.today{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px}
+.today .h{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--mut);margin-bottom:10px}
+.trow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;align-items:center}
+.trow:first-of-type{border-top:0}
+.trow span{color:var(--mut)}.trow b{font-weight:800;text-align:right;transition:color .3s}
+.trow b.good{color:var(--grn)}.trow b.gold{color:var(--gold)}.trow b.org{color:var(--org)}.trow b.red{color:var(--red)}
+canvas.chart{width:100%;height:auto;margin-top:8px;border-radius:10px}
+.foot{display:flex;justify-content:space-between;color:var(--mut);font-size:10px;padding:14px 4px 4px}
+.foot .cname{color:var(--txt)}
+.bar{height:10px;border-radius:99px;background:var(--bg);border:1px solid var(--line);overflow:hidden;margin:8px 0}
+.bar>i{display:block;height:100%;border-radius:99px;transition:width .5s,background .5s}
+.bigstat{display:flex;align-items:baseline;gap:6px}
+.bigstat b{font-size:34px;font-weight:800;letter-spacing:-.03em}
+.bigstat small{color:var(--mut);font-size:12px;font-weight:700}
+.kv2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.kv2 .k{background:var(--bg);border:1px solid var(--line);border-radius:12 .k{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 10px}
+.kv2 .k small{display:block;color:var(--mut);font-size:9px;margin-bottom:3px;letter-spacing:.03em}
+.kv2 .k b{font-size:15px;font-weight:800}
+.hseg{display:flex;gap:6px;margin:10px 0 4px}
+.hsegbtn{flex:1;padding:8px 4px;border-radius:8px;border:1px solid #2a3550;background:#131b2b;color:var(--mut);font:700 11px system-ui;cursor:pointer}
+.hsegbtn.on{background:rgba(245,196,81,.14);color:var(--gold);border-color:var(--gold)}
+.pane{display:none}
+.pane.on{display:block;animation:paneIn .28s ease}
+@keyframes paneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:400px;display:flex;background:#0f1522;border-top:1px solid #232c44;z-index:40}
+.tabbtn{flex:1;background:none;border:none;color:var(--mut);font:700 10px system-ui;padding:8px 0 10px;cursor:pointer;transition:color .2s,border-color .2s;line-height:1.15}
+.tabbtn .ic{display:block;font-size:16px;margin-bottom:2px}
+.tabbtn.on{color:var(--gold);border-top:2px solid var(--gold)}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
+.sheet h3{font-size:12px;letter-spacing:.08em;color:var(--gold);margin:14px 0 8px}
+.sheet h3:first-child{margin-top:0}
+label{display:block;font-size:11px;color:var(--mut);margin:9px 0 4px;font-weight:600}
+input,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;color:var(--txt);font-size:13px}
+input:focus,select:focus{outline:none;border-color:var(--gold)}
+.srow{display:flex;gap:8px;margin-top:14px}
+.srow .btn{flex:1}
+.fcrow{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:4px;padding:7px 0;border-top:1px solid var(--line);font-size:12px;align-items:center}
+.fcrow:first-of-type{border-top:0}
+.fcrow.head{color:var(--mut);font-size:10px;font-weight:800;letter-spacing:.05em}
+.fcrow span{color:var(--mut)}
+.fcrow b{text-align:right;font-weight:800}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal.open{display:flex}
+.modal .sheet{max-height:85vh;overflow:auto;max-width:430px;width:100%;position:static;box-shadow:
