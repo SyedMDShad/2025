@@ -1,456 +1,741 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>SAKO SolarOS Ultra | E-SUN 2KVA Hybrid + REC 800W</title>
-  
-  <meta name="theme-color" content="#070b14" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SAKO SOLAR PRO INTELLIGENCE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;800&family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    :root {
-      --bg-dark: #070b14;
-      --bg-radial: radial-gradient(circle at 50% 10%, #152238 0%, #070b14 85%);
-      --card-bg: rgba(14, 23, 42, 0.72);
-      --card-border: rgba(0, 242, 254, 0.16);
-      --card-glow: rgba(0, 242, 254, 0.06);
-      
-      --cyan: #00f2fe;
-      --solar: #ffb703;
-      --solar-glow: rgba(255, 183, 3, 0.25);
-      --battery: #10b981;
-      --battery-red: #ef4444;
-      --grid: #3b82f6;
-      --load: #f97316;
-      --inverter: #8b5cf6;
-      
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --font-mono: "SF Mono", "Roboto Mono", Consolas, monospace;
-    }
+<style>
+:root {
+  --bg: #050811;
+  --card: #0b1120;
+  --card-sub: #131c31;
+  --border: #1e2e4a;
+  --text: #f8fafc;
+  --muted: #8493ad;
+  --green: #10b981;
+  --gold: #f59e0b;
+  --blue: #3b82f6;
+  --red: #ef4444;
+  --font-mono: 'Chakra Petch', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', 'Hind Siliguri', sans-serif;
+  min-height: 100vh;
+  padding-bottom: 85px;
+  overflow-x: hidden;
+}
+.glow-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle 500px at 80% -10%, rgba(245,158,11,0.08), transparent 70%),
+              radial-gradient(circle 450px at -10% 40%, rgba(16,185,129,0.06), transparent 70%),
+              radial-gradient(circle 400px at 100% 80%, rgba(59,130,246,0.06), transparent 70%);
+}
+.wrap { max-width: 520px; margin: 0 auto; padding: 14px; position: relative; z-index: 1; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background: var(--bg-radial); color: var(--text-main); min-height: 100vh; overflow-x: hidden; padding-bottom: 75px; }
+/* TOP LIVE HUD */
+.hud-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px);
+  border: 1px solid var(--border); border-radius: 16px; padding: 10px 14px; margin-bottom: 14px;
+}
+.live-status { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; }
+.pulse-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 1.8s infinite; }
+.pulse-dot.offline { background: var(--red); box-shadow: 0 0 10px var(--red); animation: none; }
+@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+.hud-controls { display: flex; align-items: center; gap: 8px; }
+.hud-btn {
+  width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card-sub); color: var(--text); font-size: 14px; display: flex;
+  align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+}
+.hud-btn:hover { border-color: var(--gold); }
 
-    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: rgba(7, 11, 20, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--card-border); position: sticky; top: 0; z-index: 50; }
-    .brand-group { display: flex; align-items: center; gap: 10px; }
-    .brand-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--cyan), #4facfe); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #070b14; font-size: 0.9rem; }
-    .brand-title { font-weight: 800; font-size: 1.05rem; }
-    .brand-sub { font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); }
+/* HERO COMMAND DISPLAY */
+.hero-card {
+  background: linear-gradient(165deg, rgba(23, 35, 60, 0.75), rgba(15, 23, 42, 0.9));
+  border: 1px solid var(--border); border-radius: 20px; padding: 18px; position: relative;
+  overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); margin-bottom: 14px;
+}
+.hero-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.hero-label { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: var(--muted); }
+.hero-badge { font-size: 10px; font-weight: 800; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; }
+.badge-grid-on { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid var(--green); }
+.badge-grid-off { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid var(--red); }
+.hero-main-val { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 10px 0; }
+.hero-main-val .num { font-size: 48px; font-weight: 800; font-family: var(--font-mono); }
+.hero-main-val .unit { font-size: 18px; font-weight: 700; color: var(--muted); }
+.hero-subline { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-top: 6px; }
 
-    .header-status { display: flex; align-items: center; gap: 8px; background: rgba(14, 23, 42, 0.8); border: 1px solid var(--card-border); padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; }
-    .dot-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--battery); box-shadow: 0 0 8px var(--battery); animation: pulse 2s infinite ease-in-out; }
-    .dot-indicator.offline { background: var(--battery-red); animation: none; }
-    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } }
+/* 4-METRIC MATRIX */
+.matrix-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+.matrix-cell { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; }
+.matrix-cell small { display: block; font-size: 10px; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
+.matrix-cell b { display: block; font-size: 22px; font-weight: 800; font-family: var(--font-mono); }
+.matrix-cell span { font-size: 11px; color: var(--muted); }
 
-    .container { max-width: 580px; margin: 0 auto; padding: 12px 14px; }
-    .visual-wrapper { position: relative; width: 100%; height: 290px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 24px; overflow: hidden; margin-bottom: 14px; }
-    canvas#powerCanvas { width: 100%; height: 100%; display: block; }
+/* POWER FLOW SVG */
+.flow-container { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 16px; margin-bottom: 14px; text-align: center; }
+.flow-title { font-size: 11px; font-weight: 800; color: var(--muted); margin-bottom: 10px; text-align: left; }
+svg { width: 100%; height: auto; max-height: 220px; }
+.flow-line { stroke-width: 2.5; stroke-dasharray: 6, 6; animation: dash 1s linear infinite; }
+.flow-line.idle { stroke: #2a3b5c !important; stroke-dasharray: none; animation: none; }
+.flow-line.rev { animation-direction: reverse; }
+@keyframes dash { to { stroke-dashoffset: -12; } }
+.fnode { font-size: 10px; font-weight: 700; fill: #f8fafc; font-family: 'Inter', sans-serif; }
+.fsub { font-size: 9px; fill: var(--muted); font-family: var(--font-mono); }
 
-    .node-overlay { position: absolute; transform: translate(-50%, -50%); pointer-events: none; text-align: center; }
-    .badge-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; }
-    .badge-val { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+/* OUTAGE MONITOR */
+.outage-box { background: linear-gradient(145deg, #17111e, #1a0f18); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 16px; padding: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+.outage-box.healthy { background: var(--card); border-color: var(--border); }
+.outage-info h4 { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.outage-info p { font-size: 11px; color: var(--muted); }
 
-    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px; }
-    .glass-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 14px; position: relative; cursor: pointer; backdrop-filter: blur(12px); }
-    .glass-card:hover { border-color: rgba(0, 242, 254, 0.35); }
-    .glass-card::after { content: "✏️"; position: absolute; top: 10px; right: 10px; font-size: 0.75rem; opacity: 0.4; }
+/* APPLIANCE CARDS */
+.app-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.app-left { display: flex; align-items: center; gap: 12px; }
+.app-icon { font-size: 24px; width: 40px; height: 40px; border-radius: 12px; background: var(--card-sub); display: flex; align-items: center; justify-content: center; }
+.app-name { font-size: 13px; font-weight: 700; }
+.app-desc { font-size: 11px; color: var(--muted); }
+.status-pill { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 12px; }
+.pill-ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid var(--green); }
+.pill-avoid { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid var(--red); }
+.pill-caution { background: rgba(245, 158, 11, 0.15); color: var(--gold); border: 1px solid var(--gold); }
 
-    .tile-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .tile-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-    .tile-val { font-family: var(--font-mono); font-size: 1.55rem; font-weight: 800; margin-bottom: 4px; }
-    .tile-sub { font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; }
-    .tile.solar .tile-val { color: var(--solar); }
-    .tile.battery .tile-val { color: var(--battery); }
-    .tile.grid .tile-val { color: var(--grid); }
-    .tile.load .tile-val { color: var(--load); }
+/* PRO CARDS & TABS */
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+.bottom-tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(11, 17, 32, 0.95); backdrop-filter: blur(16px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 6px; z-index: 50; max-width: 520px; margin: 0 auto; }
+.tab-button { background: none; border: none; color: var(--muted); font-size: 10px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; flex: 1; }
+.tab-button.active { color: var(--gold); }
+.tab-button .icon { font-size: 18px; }
 
-    .progress-bar-bg { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 4px; margin: 8px 0; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #10b981, #00f2fe); border-radius: 4px; transition: width 0.4s ease; }
+.pro-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
+.pro-card-title { font-size: 12px; font-weight: 800; color: var(--muted); margin-bottom: 12px; display: flex; justify-content: space-between; }
+.pro-row { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.pro-row:last-child { border-bottom: none; }
+.chart-wrapper { height: 180px; position: relative; margin-top: 10px; }
+.note-text { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 8px; display: block; }
 
-    .intel-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 16px; margin-bottom: 14px; }
-    .section-title { font-size: 0.82rem; font-weight: 800; color: var(--cyan); margin-bottom: 12px; }
-    .intel-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.84rem; }
-    .intel-row:last-child { border-bottom: none; }
-    .intel-label { color: var(--text-muted); }
-    .intel-value { font-family: var(--font-mono); font-weight: 700; }
+.text-green { color: var(--green); }
+.text-gold { color: var(--gold); }
+.text-blue { color: var(--blue); }
+.text-red { color: var(--red); }
 
-    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: rgba(7, 11, 20, 0.95); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 580px; margin: 0 auto; }
-    .nav-link { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); background: none; border: none; cursor: pointer; font-size: 0.7rem; font-weight: 600; }
-    .nav-link.active, .nav-link:hover { color: var(--cyan); }
-
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
-    .modal-box { background: #0f172a; border: 1px solid var(--cyan); border-radius: 22px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; padding: 22px; }
-    .modal-tabs { display: flex; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 14px; }
-    .modal-tab-btn { flex: 1; padding: 8px 4px; border-radius: 8px; border: none; background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
-    .modal-tab-btn.active { background: var(--cyan); color: #070b14; }
-
-    .form-group { margin-bottom: 14px; }
-    .form-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; font-weight: 600; }
-    .form-input, .form-select { width: 100%; padding: 10px 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-main); font-family: var(--font-mono); font-size: 0.9rem; }
-    .slider-range { width: 100%; accent-color: var(--cyan); cursor: pointer; }
-    .preset-chips { display: flex; gap: 6px; margin-top: 6px; }
-    .preset-chip { padding: 5px 10px; background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); border-radius: 6px; font-size: 0.72rem; cursor: pointer; color: var(--text-muted); font-weight: 700; }
-    .preset-chip:hover { border-color: var(--cyan); color: var(--cyan); }
-    .btn-save { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--cyan), #38bdf8); color: #070b14; font-weight: 800; border: none; border-radius: 12px; cursor: pointer; margin-top: 10px; }
-    .btn-cancel { width: 100%; padding: 9px; background: transparent; color: var(--text-muted); border: none; cursor: pointer; }
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
-  </style>
+/* MODALS */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.78); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; max-width: 440px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px; }
+.btn { padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-sub); color: var(--text); font-weight: 700; cursor: pointer; }
+</style>
 </head>
 <body>
+<div class="glow-bg"></div>
+<div class="wrap">
 
-  <header class="top-bar">
-    <div class="brand-group">
-      <div class="brand-icon">⚡</div>
-      <div>
-        <div class="brand-title">SAKO SolarOS Ultra</div>
-        <span class="brand-sub">E-SUN 2KVA Hybrid + REC 800W Array</span>
-      </div>
+  <!-- TOP LIVE HUD -->
+  <div class="hud-bar">
+    <div class="live-status">
+      <div id="liveDot" class="pulse-dot"></div>
+      <span id="liveStatusText">CLOUD SYNC LIVE</span>
+      <span style="color: var(--muted); font-family: var(--font-mono); font-size: 10px;" id="packetCount">· 0 pkts</span>
     </div>
-    <div class="header-status" onclick="openConfigModal('battery')">
-      <div class="dot-indicator" id="liveDot"></div>
-      <span id="connLabel" style="font-family: var(--font-mono); font-weight: 700;">Live Connected</span>
-    </div>
-  </header>
-
-  <main class="container">
-    <div class="visual-wrapper">
-      <canvas id="powerCanvas"></canvas>
-      <div class="node-overlay" style="top: 18%; left: 50%;"><span class="badge-label">PV Generation</span><span class="badge-val" id="badgePvVal" style="color: var(--solar);">-- W</span></div>
-      <div class="node-overlay" style="top: 50%; left: 16%;"><span class="badge-label">Main Grid</span><span class="badge-val" id="badgeGridVal" style="color: var(--grid);">-- W</span></div>
-      <div class="node-overlay" style="top: 50%; left: 50%;"><span class="badge-label" style="color: var(--cyan);">SAKO Core</span><span class="badge-val" style="font-size:0.75rem; color: var(--text-muted);">2KVA / 12V</span></div>
-      <div class="node-overlay" style="top: 50%; left: 84%;"><span class="badge-label">House Load</span><span class="badge-val" id="badgeLoadVal" style="color: var(--load);">-- W</span></div>
-      <div class="node-overlay" style="top: 82%; left: 50%; cursor: pointer; pointer-events: auto;" onclick="openConfigModal('battery')"><span class="badge-label">12V Battery ✏️</span><span class="badge-val" id="badgeBatVal" style="color: var(--battery);">-- A</span></div>
-    </div>
-
-    <div class="metrics-grid">
-      <div class="glass-card tile solar" onclick="openConfigModal('solar')">
-        <div class="tile-header"><span class="tile-title">☀️ Solar PV</span><span style="font-size:0.7rem; color:var(--text-muted);">2x REC 400W</span></div>
-        <div class="tile-val" id="tilePvW">-- <small style="font-size:0.85rem;">W</small></div>
-        <div class="tile-sub"><span>Today: <strong id="pvDailyKwh">0.00 kWh</strong></span><span id="pvCoverPercent" style="color:var(--solar); font-weight:700;">--%</span></div>
-      </div>
-
-      <div class="glass-card tile battery" onclick="openConfigModal('battery')">
-        <div class="tile-header"><span class="tile-title">🔋 Battery SOC</span><span style="font-size:0.7rem;" id="tileBatVolts">13.5 V</span></div>
-        <div class="tile-val" id="tileBatSoc">85 <small style="font-size:0.85rem;">%</small></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" id="barBatSoc" style="width: 85%;"></div></div>
-        <div class="tile-sub"><span id="tileBatCurrent">+21.0 A (Solar Chg)</span><span id="tileBatRuntime" style="color:var(--battery);">--</span></div>
-      </div>
-
-      <div class="glass-card tile grid" onclick="openConfigModal('grid')">
-        <div class="tile-header"><span class="tile-title">⚡ Grid Input</span><span style="font-size:0.7rem; color:var(--text-muted);" id="gridVoltSub">228V</span></div>
-        <div class="tile-val" id="tileGridW">0 <small style="font-size:0.85rem;">W</small></div>
-        <div class="tile-sub"><span id="tileGridStatus">Grid Online</span><span>Today: <strong id="gridDailyKwh">0.00 kWh</strong></span></div>
-      </div>
-
-      <div class="glass-card tile load" onclick="openConfigModal('grid')">
-        <div class="tile-header"><span class="tile-title">🏠 AC Load</span><span style="font-size:0.7rem; color:var(--text-muted);">Inverter Out</span></div>
-        <div class="tile-val" id="tileLoadW">120 <small style="font-size:0.85rem;">W</small></div>
-        <div class="tile-sub"><span id="loadCurrentSub">0.5 A @ 228V</span><span>Peak: <strong id="peakLoadVal">-- W</strong></span></div>
-      </div>
-    </div>
-
-    <div class="intel-section">
-      <div class="section-title">⚡ SYSTEM INTELLIGENCE</div>
-      <div class="intel-row"><span class="intel-label">Solar Direct Load Coverage</span><span class="intel-value" id="statSolarCover" style="color:var(--solar);">100%</span></div>
-      <div class="intel-row"><span class="intel-label">Battery Estimated Backup</span><span class="intel-value" id="statBackupTime" style="color:var(--cyan);">--</span></div>
-      <div class="intel-row"><span class="intel-label">Time until Battery Full</span><span class="intel-value" id="statTimeToFull" style="color:var(--battery);">~ 1.2 Hours</span></div>
-      <div class="intel-row"><span class="intel-label">Inverter Standby Loss</span><span class="intel-value">45 W</span></div>
-    </div>
-  </main>
-
-  <nav class="bottom-nav">
-    <button class="nav-link active" onclick="window.scrollTo({top:0,behavior:'smooth'})"><span style="font-size:1.25rem;">📊</span><span>Overview</span></button>
-    <button class="nav-link" onclick="openConfigModal('battery')"><span style="font-size:1.25rem;">⚙️</span><span>Settings</span></button>
-    <button class="nav-link" onclick="pollData()"><span style="font-size:1.25rem;">🔄</span><span>Refresh</span></button>
-  </nav>
-
-  <!-- Configuration Modal -->
-  <div class="modal-overlay" id="configModal">
-    <div class="modal-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h2 style="font-size:1.15rem; color:var(--cyan);">⚙️ Settings & Manual Calibration</h2>
-        <button style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;" onclick="closeConfigModal()">&times;</button>
-      </div>
-
-      <div class="modal-tabs">
-        <button class="modal-tab-btn active" id="tabBtn_battery" onclick="switchModalTab('battery')">🔋 Battery & SOC</button>
-        <button class="modal-tab-btn" id="tabBtn_solar" onclick="switchModalTab('solar')">☀️ Solar Power</button>
-        <button class="modal-tab-btn" id="tabBtn_grid" onclick="switchModalTab('grid')">⚡ Grid & Load</button>
-      </div>
-
-      <!-- Tab: Battery -->
-      <div class="tab-pane active" id="tabPane_battery">
-        <div class="form-group">
-          <div class="form-label"><span>Manual Battery SOC (%)</span><strong id="lblSocDisplay" style="color:var(--cyan);">85%</strong></div>
-          <input type="range" class="slider-range" id="cfgSocSlider" min="10" max="100" step="1" value="85" oninput="onSocSlider(this.value)">
-          <div class="preset-chips">
-            <button class="preset-chip" onclick="setSocPreset(50)">50%</button>
-            <button class="preset-chip" onclick="setSocPreset(70)">70%</button>
-            <button class="preset-chip" onclick="setSocPreset(80)">80%</button>
-            <button class="preset-chip" onclick="setSocPreset(85)">85%</button>
-            <button class="preset-chip" onclick="setSocPreset(100)">100%</button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-label"><span>Battery Charging Current (Amps)</span><span style="color:var(--gold);">Live: ~20A–22A</span></div>
-          <input type="number" class="form-input" id="cfgBatAmps" step="0.5" value="21.0">
-          <div class="preset-chips">
-            <button class="preset-chip" onclick="setBatAmpsPreset(21.0)">+21A (Solar)</button>
-            <button class="preset-chip" onclick="setBatAmpsPreset(15.0)">+15A</button>
-            <button class="preset-chip" onclick="setBatAmpsPreset(-10.0)">-10A (Drain)</button>
-            <button class="preset-chip" onclick="setBatAmpsPreset(0.0)">0A (Idle)</button>
-          </div>
-        </div>
-
-        <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <div><div class="form-label"><span>Voltage (V)</span></div><input type="number" class="form-input" id="cfgBatVolt" value="13.5" step="0.1"></div>
-          <div><div class="form-label"><span>Capacity (Ah)</span></div><input type="number" class="form-input" id="cfgBatCap" value="200" step="5"></div>
-        </div>
-
-        <div class="form-group">
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
-            <input type="checkbox" id="cfgLockSoc" checked style="accent-color:var(--cyan);">
-            <span>Lock Manual SOC (স্বয়ংক্রিয় পরিবর্তন ব্লক রাখুন)</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Tab: Solar -->
-      <div class="tab-pane" id="tabPane_solar">
-        <div class="form-group">
-          <div class="form-label"><span>Solar Calculation</span></div>
-          <select class="form-select" id="cfgSolarMode">
-            <option value="auto">Auto (Battery DC Charge + Load Coverage)</option>
-            <option value="manual">Manual Fixed (Specify Watt)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <div class="form-label"><span>Array Capacity</span></div>
-          <input type="text" class="form-input" value="2x REC 400W (800W Array)" readonly style="opacity:0.6;">
-        </div>
-      </div>
-
-      <!-- Tab: Grid & Load -->
-      <div class="tab-pane" id="tabPane_grid">
-        <div class="form-group">
-          <div class="form-label"><span>Electricity Tariff (BDT/kWh)</span></div>
-          <input type="number" class="form-input" id="cfgTariffRate" value="15.00" step="0.5">
-        </div>
-      </div>
-
-      <div style="margin-top:14px;">
-        <button class="btn-save" onclick="saveAllSettings()">💾 Save & Apply</button>
-        <button class="btn-cancel" onclick="closeConfigModal()">Cancel</button>
-      </div>
+    <div class="hud-controls">
+      <button class="hud-btn" id="btnRefresh" title="Refresh">↻</button>
+      <button class="hud-btn" id="btnNotif" title="Alerts">🔔</button>
+      <button class="hud-btn" id="btnSet" title="Settings">⚙</button>
     </div>
   </div>
 
-  <script>
-    let system = { pvPower: 380, gridVoltage: 228, inverterInputPower: 0, inverterOutputPower: 120, gridOnline: true, batterySoc: 85, batteryVoltage: 13.5, batteryAmps: 21.0, pvDailyKwh: 2.10, gridDailyKwh: 0.0, tariffRate: 15.00, peakLoad: 450 };
-    let userSettings = { manualSoc: 85, lockSoc: true, batteryAmps: 21.0, batteryVoltage: 13.5, batteryCapacity: 200, solarMode: "auto", tariffRate: 15.00 };
+  <!-- ================= TAB 1 · DASHBOARD ================= -->
+  <div id="tabDashboard" class="tab-pane active">
+    <!-- HERO -->
+    <div class="hero-card">
+      <div class="hero-top">
+        <span class="hero-label">HOUSE POWER · LIVE LOAD</span>
+        <span id="gridBadge" class="hero-badge badge-grid-on">GRID ACTIVE</span>
+      </div>
+      <div class="hero-main-val">
+        <span id="heroLoadWatt" class="num text-blue">0.0</span>
+        <span class="unit">Watt</span>
+      </div>
+      <div class="hero-subline">
+        <span>⚡ সোলার কভারেজ: <strong id="heroSolarRatio" class="text-gold">0%</strong></span>
+        <span>লোড ভোল্টেজ: <strong id="heroLoadVolt">0V</strong></span>
+      </div>
 
-    function loadSavedSettings() {
-      try {
-        const saved = localStorage.getItem("sako_user_settings");
-        if (saved) Object.assign(userSettings, JSON.parse(saved));
-      } catch (e) {}
-      system.batterySoc = userSettings.manualSoc;
-      system.batteryAmps = userSettings.batteryAmps;
-      system.batteryVoltage = userSettings.batteryVoltage;
+      <!-- 4-METRIC MATRIX -->
+      <div class="matrix-grid">
+        <div class="matrix-cell">
+          <small>GRID IN</small>
+          <b id="matGridWatt" class="text-green">0W</b>
+          <span id="matGridAmp">0.0A</span>
+        </div>
+        <div class="matrix-cell">
+          <small>LOAD OUT</small>
+          <b id="matLoadWatt" class="text-blue">0W</b>
+          <span id="matLoadAmp">0.0A</span>
+        </div>
+        <div class="matrix-cell">
+          <small>SOLAR PV</small>
+          <b id="matSolarWatt" class="text-gold">0W</b>
+          <span id="matSolarSub">2x 400W REC</span>
+        </div>
+        <div class="matrix-cell">
+          <small>BATTERY</small>
+          <b id="matBattWatt" class="text-green">+0W</b>
+          <span id="matBattAmp">+0.0A</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTAGE MONITOR -->
+    <div id="outageBox" class="outage-box healthy">
+      <div class="outage-info">
+        <h4 id="outageTitle">⚡ পল্লী বিদ্যুৎ গ্রিড সচল</h4>
+        <p id="outageSub">আজ লোডশেডিং: 0 বার · সচল: 0.0h</p>
+      </div>
+      <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 700;" id="outageTimer">220V</div>
+    </div>
+
+    <!-- POWER FLOW ANIMATION -->
+    <div class="flow-container">
+      <div class="flow-title">POWER FLOW · SAKO 2KVA (12V)</div>
+      <svg viewBox="0 0 340 220">
+        <line id="flGrid" class="flow-line idle" x1="85" y1="50" x2="145" y2="85" stroke="#10b981"/>
+        <line id="flSolar" class="flow-line idle" x1="255" y1="50" x2="195" y2="85" stroke="#f59e0b"/>
+        <line id="flBatt" class="flow-line idle" x1="85" y1="145" x2="145" y2="115" stroke="#10b981"/>
+        <line id="flLoad" class="flow-line idle" x1="255" y1="145" x2="195" y2="115" stroke="#3b82f6"/>
+        
+        <circle cx="170" cy="100" r="32" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+        <text x="170" y="97" text-anchor="middle" style="font-size: 11px; font-weight: 800; fill: #fff;">SAKO</text>
+        <text x="170" y="109" text-anchor="middle" style="font-size: 8px; fill: var(--muted);">2KVA / 12V</text>
+
+        <text x="50" y="45" text-anchor="middle" class="fnode">⚡ GRID</text>
+        <text id="flGridW" x="50" y="58" text-anchor="middle" class="fsub">0W</text>
+        <text id="flGridA" x="50" y="68" text-anchor="middle" class="fsub">0.0A</text>
+
+        <text x="290" y="45" text-anchor="middle" class="fnode">☀️ SOLAR</text>
+        <text id="flSolarW" x="290" y="58" text-anchor="middle" class="fsub" fill="#f59e0b">0W</text>
+        <text x="290" y="68" text-anchor="middle" class="fsub">800W REC</text>
+
+        <text x="50" y="140" text-anchor="middle" class="fnode">🔋 BATTERY</text>
+        <text id="flBattW" x="50" y="153" text-anchor="middle" class="fsub" fill="#10b981">+0W</text>
+        <text id="flBattA" x="50" y="163" text-anchor="middle" class="fsub">+0.0A</text>
+
+        <text x="290" y="140" text-anchor="middle" class="fnode">🏠 LOAD</text>
+        <text id="flLoadW" x="290" y="153" text-anchor="middle" class="fsub" fill="#3b82f6">0W</text>
+        <text id="flLoadA" x="290" y="163" text-anchor="middle" class="fsub">0.0A</text>
+      </svg>
+    </div>
+
+    <!-- APPLIANCE SCHEDULING ADVISOR -->
+    <div class="pro-card">
+      <div class="pro-card-title"><span>⚡ APPLIANCE SMART ADVISOR</span><span id="clockHeader">--:--</span></div>
+      
+      <div class="app-card">
+        <div class="app-left">
+          <div class="app-icon">🍚</div>
+          <div>
+            <div class="app-name">রাইস কুকার (৭০০W)</div>
+            <div class="app-desc" id="appCookerDesc">সোলার স্ট্যাটাস যাচাই হচ্ছে...</div>
+          </div>
+        </div>
+        <span id="appCookerPill" class="status-pill pill-avoid">CHECKING</span>
+      </div>
+
+      <div class="app-card">
+        <div class="app-left">
+          <div class="app-icon">🧺</div>
+          <div>
+            <div class="app-name">ওয়াশিং মেশিন (কোল্ড)</div>
+            <div class="app-desc" id="appWashDesc">সোলার স্ট্যাটাস যাচাই হচ্ছে...</div>
+          </div>
+        </div>
+        <span id="appWashPill" class="status-pill pill-caution">CHECKING</span>
+      </div>
+
+      <div class="app-card">
+        <div class="app-left">
+          <div class="app-icon">💧</div>
+          <div>
+            <div class="app-name">পানির মোটর (১ HP)</div>
+            <div class="app-desc" id="appPumpDesc">হাই কারেন্ট সার্জ চেক হচ্ছে...</div>
+          </div>
+        </div>
+        <span id="appPumpPill" class="status-pill pill-avoid">CHECKING</span>
+      </div>
+    </div>
+
+    <!-- LIVE 20-POINT TREND CHART -->
+    <div class="pro-card">
+      <div class="pro-card-title"><span>📈 LIVE POWER TREND</span></div>
+      <div class="chart-wrapper"><canvas id="chartLiveTrend"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 2 · SOLAR & WX ================= -->
+  <div id="tabSolar" class="tab-pane">
+    <div class="pro-card">
+      <div class="pro-card-title"><span>☀️ REC 400W HETEROJUNCTION ARRAY</span><span>2 PANELS · 800W</span></div>
+      <div class="pro-row"><span>প্যানেল ব্র্যান্ড ও মডেল</span><b>REC Alpha Pure-R (HJT)</b></div>
+      <div class="pro-row"><span>টেস্টিং পিক জেনারেশন</span><b class="text-gold">650 Watt Peak</b></div>
+      <div class="pro-row"><span>লো-লাইট ও ক্লাউড পারফরম্যান্স</span><b class="text-green">অসাধারণ (HJT টেকনোলজি)</b></div>
+      <div class="pro-row"><span>প্যানেল টিল্ট ও অ্যাজিমুথ</span><b>10° South (চিলাহাটি)</b></div>
+    </div>
+
+    <div class="pro-card">
+      <div class="pro-card-title"><span>🌤️ CLEAR-SKY GENERATION PROFILE</span></div>
+      <div class="chart-wrapper"><canvas id="chartHourlySolar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 3 · BATTERY ================= -->
+  <div id="tabBattery" class="tab-pane">
+    <div class="pro-card">
+      <div class="pro-card-title">
+        <span>🔋 12V BATTERY INTELLIGENCE</span>
+        <span id="battStatePill" class="status-pill pill-ready">CHARGING</span>
+      </div>
+      
+      <!-- BATTERY MANUAL EDIT HEADER -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin: 10px 0;">
+        <div style="display:flex; align-items:baseline; gap:8px;">
+          <span style="font-size:44px; font-weight:800; font-family:var(--font-mono); color:var(--green);" id="battSocNum">85</span>
+          <span style="font-size:16px; font-weight:700; color:var(--muted);">% SoC</span>
+        </div>
+        <button onclick="openSettings()" style="background:rgba(16,185,129,0.15); border:1px solid var(--green); color:var(--green); padding:6px 12px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <span>✏️</span> % এডিট / সেট করুন
+        </button>
+      </div>
+
+      <div style="height:12px; background: #070b14; border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:14px;">
+        <div id="battSocBar" style="width:85%; height:100%; background:var(--green); transition:0.5s;"></div>
+      </div>
+      <div class="pro-row"><span>লাইভ ব্যাটারি কারেন্ট</span><b id="battCurrentAmp" class="text-green">+21.0 A (সোলার চার্জিং)</b></div>
+      <div class="pro-row"><span>চার্জিং পাওয়ার</span><b id="battChargeWatt" class="text-green">277 W</b></div>
+      <div class="pro-row"><span>ডিসচার্জিং পাওয়ার</span><b id="battDischargeWatt" class="text-red">0 W</b></div>
+      <div class="pro-row"><span>বর্তমান লোডে ব্যাকআপ সময়</span><b id="battRuntimeHours" class="text-gold">--</b></div>
+      <div class="pro-row"><span>ফুল চার্জ হতে আনুমানিক সময়</span><b id="battTimeToFull">~ 1.1 ঘণ্টা</b></div>
+    </div>
+
+    <div class="pro-card">
+      <div class="pro-card-title"><span>⚠️ 12V HIGH-CURRENT CAUTION</span></div>
+      <span class="note-text">
+        আপনার ইনভার্টারটি একটি ১২ ভোল্ট (12V) সিস্টেম। ১২ ভোল্ট সিস্টেমে ১০০০W+ লোড দিলে ব্যাটারি থেকে প্রায় ৮০-১০০ অ্যাম্পিয়ার কারেন্ট টানা হয়। ব্যাটারির দীর্ঘায়ুর জন্য নিয়মিত লোড ৫০০-৭০০ ওয়াটের মধ্যে রাখা উত্তম।
+      </span>
+    </div>
+  </div>
+
+  <!-- ================= TAB 4 · FINANCIAL ================= -->
+  <div id="tabBill" class="tab-pane">
+    <div class="pro-card">
+      <div class="pro-card-title"><span>💰 FINANCIAL SAVINGS (BDT)</span><span>TARIFF: ৳ 15.00</span></div>
+      <div class="pro-row"><span>আজ সোলারে বিদ্যুৎ সেভ</span><b id="finSolSavingToday" class="text-green">৳ 0.00</b></div>
+      <div class="pro-row"><span>এলপিজি (LPG) গ্যাস সাশ্রয়</span><b class="text-green">~ ৳ ৩৫০ - ৫০০ / মাস</b></div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 5 · HISTORY ================= -->
+  <div id="tabHistory" class="tab-pane">
+    <div class="pro-card">
+      <div class="pro-card-title"><span>📊 SYSTEM REGISTRY</span></div>
+      <div class="pro-row"><span>সোলার প্যানেল</span><b>2x REC 400W (800W)</b></div>
+      <div class="pro-row"><span>ইনভার্টার কোর</span><b>SAKO 2KVA / 12V</b></div>
+      <div class="pro-row"><span>স্মার্ট মনিটরিং</span><b>Tuya Cloud OpenAPI v2</b></div>
+      <div class="pro-row"><span>লোকেশন</span><b>খানকা শরীফ জামে মসজিদ, চিলাহাটি</b></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM TAB BAR -->
+<div class="bottom-tabbar">
+  <button class="tab-button active" onclick="switchTab('tabDashboard')"><span class="icon">🏠</span>Overview</button>
+  <button class="tab-button" onclick="switchTab('tabSolar')"><span class="icon">☀️</span>Solar &amp; Wx</button>
+  <button class="tab-button" onclick="switchTab('tabBattery')"><span class="icon">🔋</span>Battery</button>
+  <button class="tab-button" onclick="switchTab('tabBill')"><span class="icon">💰</span>Financial</button>
+  <button class="tab-button" onclick="switchTab('tabHistory')"><span class="icon">📊</span>History</button>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+      <h3 style="font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--gold);">⚙️</span> সিস্টেম ও ব্যাটারি সেটিংস
+      </h3>
+      <button onclick="closeSettings()" style="background:var(--card-sub); border:1px solid var(--border); color:var(--muted); font-size:18px; width:30px; height:30px; border-radius:8px; cursor:pointer;">&times;</button>
+    </div>
+
+    <!-- Battery SoC Slider & Input -->
+    <div style="background:var(--card-sub); padding:14px; border-radius:14px; border:1px solid var(--border); margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <label style="font-size:13px; font-weight:800; color:var(--green);">🔋 ব্যাটারি চার্জ লেভেল (% SoC)</label>
+        <span style="font-family:var(--font-mono); font-size:16px; font-weight:800; color:var(--green);" id="socPreviewVal">85%</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <input type="range" id="cfgBattSoc" min="5" max="100" value="85" style="flex:1; accent-color:var(--green); cursor:pointer;" oninput="onSocSliderChange(this.value)">
+        <input type="number" id="cfgBattSocNum" min="5" max="100" value="85" style="width:65px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-weight:800; font-family:var(--font-mono); text-align:center;" oninput="onSocNumChange(this.value)">
+      </div>
+      <span class="note-text" style="font-size:11px; margin-top:6px;">আপনার ব্যাটারির বর্তমান আনুমানিক চার্জ লেভেল এখানে সেট করুন। এটি সেভ থাকবে।</span>
+    </div>
+
+    <!-- Solar to Battery Charging Current (Ampere) -->
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px; font-weight:700; display:block; margin-bottom:6px;">⚡ সোলার থেকে ব্যাটারি চার্জ কারেন্ট (Ampere)</label>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="number" id="cfgChargeAmp" min="0" max="60" step="0.5" value="21.0" style="width:110px; padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--card-sub); color:var(--text); font-weight:700; font-family:var(--font-mono);">
+        <span style="font-size:13px; font-weight:700; color:var(--gold);">Ampere (A)</span>
+      </div>
+      <span class="note-text" style="font-size:11px; margin-top:4px;">সোলার কন্ট্রোলার এখন ব্যাটারিতে যত অ্যাম্পিয়ার পাঠাচ্ছে (যেমন ২০-২২A)। ১২ ভোল্ট সিস্টেমে ২০A = ~২৭০ ওয়াট সোলার পাওয়ার।</span>
+    </div>
+
+    <!-- Battery Capacity (Ah) -->
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px; font-weight:700; display:block; margin-bottom:6px;">🪫 ব্যাটারি ব্যাংক ক্যাপাসিটি (Ah)</label>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="number" id="cfgBattAh" min="40" max="500" step="10" value="150" style="width:110px; padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--card-sub); color:var(--text); font-weight:700; font-family:var(--font-mono);">
+        <span style="font-size:13px; font-weight:700; color:var(--muted);">Ah (12V ব্যাটারি)</span>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+      <button class="btn" onclick="closeSettings()">বাতিল</button>
+      <button class="btn" style="background:var(--green); color:#050811; font-weight:800;" onclick="saveSettings()">💾 সংরক্ষণ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST ALERT -->
+<div id="toastAlert" style="position:fixed; bottom:95px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.95); border:1px solid var(--green); color:#fff; padding:10px 20px; border-radius:12px; font-size:13px; font-weight:700; z-index:1000; opacity:0; pointer-events:none; transition:opacity 0.3s ease;">
+  <span>✅</span> <span id="toastMsg">সেটিংস সফলভাবে সংরক্ষিত হয়েছে!</span>
+</div>
+
+<script>
+let liveChart = null;
+let hourlyChart = null;
+let packetCount = 0;
+let lastUpdateTs = Date.now();
+const maxPoints = 20;
+
+let userConfig = {
+  battSoc: 85,
+  chargeAmp: 21.0,
+  battAh: 150,
+  solarWatt: 800,
+  tariff: 15.0
+};
+
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem('energy_mate_user_cfg');
+    if (saved) userConfig = Object.assign(userConfig, JSON.parse(saved));
+  } catch(e) {}
+  syncSettingsUI();
+}
+
+function syncSettingsUI() {
+  const soc = userConfig.battSoc;
+  document.getElementById('cfgBattSoc').value = soc;
+  document.getElementById('cfgBattSocNum').value = soc;
+  document.getElementById('socPreviewVal').innerText = soc + '%';
+  document.getElementById('cfgChargeAmp').value = userConfig.chargeAmp;
+  document.getElementById('cfgBattAh').value = userConfig.battAh;
+}
+
+function openSettings() {
+  syncSettingsUI();
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function onSocSliderChange(val) {
+  document.getElementById('cfgBattSocNum').value = val;
+  document.getElementById('socPreviewVal').innerText = val + '%';
+}
+
+function onSocNumChange(val) {
+  val = Math.max(5, Math.min(100, parseFloat(val) || 85));
+  document.getElementById('cfgBattSoc').value = val;
+  document.getElementById('socPreviewVal').innerText = val + '%';
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toastAlert');
+  document.getElementById('toastMsg').innerText = msg;
+  toast.style.opacity = '1';
+  setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+}
+
+function saveSettings() {
+  userConfig.battSoc = Math.max(5, Math.min(100, parseFloat(document.getElementById('cfgBattSocNum').value) || 85));
+  userConfig.chargeAmp = Math.max(0, parseFloat(document.getElementById('cfgChargeAmp').value) || 21.0);
+  userConfig.battAh = Math.max(20, parseFloat(document.getElementById('cfgBattAh').value) || 150);
+
+  try {
+    localStorage.setItem('energy_mate_user_cfg', JSON.stringify(userConfig));
+  } catch(e) {}
+
+  fetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userConfig)
+  }).catch(e => {});
+
+  closeSettings();
+  showToast('সেটিংস সফলভাবে সংরক্ষিত হয়েছে!');
+  fetchLiveData();
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function initCharts() {
+  const ctx = document.getElementById('chartLiveTrend').getContext('2d');
+  liveChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: 'Solar PV (W)', borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.15)', borderWidth: 2.5, fill: true, tension: 0.3, data: [] },
+        { label: 'House Load (W)', borderColor: '#3b82f6', borderWidth: 2, fill: false, tension: 0.3, data: [] },
+        { label: 'Grid In (W)', borderColor: '#10b981', borderDash: [4, 4], borderWidth: 1.5, fill: false, tension: 0.3, data: [] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: '#1e2e4a' }, ticks: { color: '#8493ad' } },
+        y: { grid: { color: '#1e2e4a' }, ticks: { color: '#8493ad' }, beginAtZero: true }
+      },
+      plugins: { legend: { labels: { color: '#f8fafc', font: { family: 'Inter' } } } }
     }
-    loadSavedSettings();
+  });
 
-    const canvas = document.getElementById("powerCanvas");
-    const ctx = canvas.getContext("2d");
-    function resizeCanvas() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
-    window.addEventListener("resize", () => { resizeCanvas(); rebuildParticles(); });
-    resizeCanvas();
+  const ctxH = document.getElementById('chartHourlySolar').getContext('2d');
+  hourlyChart = new Chart(ctxH, {
+    type: 'bar',
+    data: {
+      labels: ['6AM','7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM'],
+      datasets: [{
+        label: 'Clear Sky Potential (W)',
+        backgroundColor: 'rgba(245, 158, 11, 0.4)',
+        borderColor: '#f59e0b',
+        borderWidth: 1,
+        data: [0, 90, 270, 540, 750, 915, 980, 960, 840, 630, 360, 135, 0]
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: '#1e2e4a' }, ticks: { color: '#8493ad' } },
+        y: { grid: { color: '#1e2e4a' }, ticks: { color: '#8493ad' } }
+      },
+      plugins: { legend: { labels: { color: '#f8fafc' } } }
+    }
+  });
+}
 
-    function getNodes() {
-      const w = canvas.width, h = canvas.height;
-      return {
-        pv: { x: w * 0.5, y: h * 0.20, color: "#ffb703" },
-        grid: { x: w * 0.16, y: h * 0.50, color: "#3b82f6" },
-        inverter: { x: w * 0.5, y: h * 0.50, color: "#00f2fe" },
-        load: { x: w * 0.84, y: h * 0.50, color: "#f97316" },
-        battery: { x: w * 0.5, y: h * 0.82, color: "#10b981" }
-      };
+function updateApplianceAdvisor(solarW, gridOnline, loadW) {
+  const cookerPill = document.getElementById('appCookerPill');
+  const cookerDesc = document.getElementById('appCookerDesc');
+  if (solarW >= 650) {
+    cookerPill.className = 'status-pill pill-ready'; cookerPill.innerText = '100% SOLAR';
+    cookerDesc.innerText = 'ফ্রি সোলারে ভাত রান্না করুন';
+  } else if (gridOnline) {
+    cookerPill.className = 'status-pill pill-ready'; cookerPill.innerText = 'GRID SHARED';
+    cookerDesc.innerText = 'সোলার + গ্রিড শেয়ারে চলবে';
+  } else {
+    cookerPill.className = 'status-pill pill-avoid'; cookerPill.innerText = 'BATTERY DRAIN';
+    cookerDesc.innerText = 'গ্রিড ছাড়া এড়ানো ভালো';
+  }
+
+  const washPill = document.getElementById('appWashPill');
+  const washDesc = document.getElementById('appWashDesc');
+  if (solarW >= 450 || gridOnline) {
+    washPill.className = 'status-pill pill-ready'; washPill.innerText = 'SAFE';
+    washDesc.innerText = 'কোল্ড ওয়াশ চালানো নিরাপদ';
+  } else {
+    washPill.className = 'status-pill pill-caution'; washPill.innerText = 'CAUTION';
+    washDesc.innerText = 'ব্যাটারি থেকে লোড নেবে';
+  }
+
+  const pumpPill = document.getElementById('appPumpPill');
+  const pumpDesc = document.getElementById('appPumpDesc');
+  if (gridOnline) {
+    pumpPill.className = 'status-pill pill-ready'; pumpPill.innerText = 'SAFE (GRID)';
+    pumpDesc.innerText = 'গ্রিড আছে, মোটর চালান';
+  } else {
+    pumpPill.className = 'status-pill pill-avoid'; pumpPill.innerText = 'AVOID (SURGE)';
+    pumpDesc.innerText = 'ব্যাটারিতে বড় সার্জ পড়বে';
+  }
+}
+
+async function fetchLiveData() {
+  try {
+    const res = await fetch('/api/states');
+    const states = await res.json();
+    packetCount++;
+    lastUpdateTs = Date.now();
+
+    const getSt = (id) => {
+      const o = states.find(x => x.entity_id === id);
+      return o ? o.state : '';
+    };
+
+    const loadW = parseFloat(getSt('sensor.16a_output_line_power')) || 0;
+    const gridW = parseFloat(getSt('sensor.20a_charging_line_power')) || 0;
+    const isGrid = getSt('binary_sensor.energy_mate_grid_available') === 'on' || getSt('binary_sensor.energy_mate_v4_grid_present') === 'on';
+
+    const loadV = parseFloat(getSt('sensor.16a_output_line_voltage')) || 228;
+    const loadA = parseFloat(getSt('sensor.16a_output_line_current')) || 0;
+    const gridA = parseFloat(getSt('sensor.20a_charging_line_current')) || 0;
+    const gridV = parseFloat(getSt('sensor.20a_charging_line_voltage')) || 228;
+
+    const sunState = getSt('sun.sun');
+    const nowHour = new Date().getHours();
+    const isDay = sunState === 'above_horizon' || (nowHour >= 6 && nowHour < 18);
+
+    // বাস্তব সোলার ও ব্যাটারি চার্জিং হিসাব
+    let chW = 0, disW = 0, battAmp = 0, pvW = 0;
+    if (isDay) {
+      battAmp = userConfig.chargeAmp;
+      chW = battAmp * 13.2; // ~277W
+      pvW = loadW + chW;    // মোট সোলার পাওয়ার = লোড + ব্যাটারি চার্জিং (~280-400W)
+    } else {
+      pvW = 0;
+      if (!isGrid) { disW = loadW; battAmp = -(loadW / 12.0); }
     }
 
-    class Particle {
-      constructor(path, color, speed) { this.path = path; this.color = color; this.speed = speed; this.progress = Math.random(); }
-      update() { this.progress += this.speed; if (this.progress >= 1) this.progress = 0; }
-      draw(ctx) {
-        const p0 = this.path[0], p1 = this.path;
-        const x = p0.x + (p1.x - p0.x) * this.progress, y = p0.y + (p1.y - p0.y) * this.progress;
-        ctx.save(); ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI * 2);
-        ctx.fillStyle = this.color; ctx.shadowColor = this.color; ctx.shadowBlur = 10; ctx.fill(); ctx.restore();
+    document.getElementById('packetCount').innerText = '· ' + packetCount + ' pkts';
+    document.getElementById('liveDot').className = 'pulse-dot' + (isGrid ? '' : ' offline');
+    document.getElementById('liveStatusText').innerText = isGrid ? 'CLOUD SYNC LIVE' : 'LOAD SHEDDING (OFF)';
+
+    document.getElementById('heroLoadWatt').innerText = loadW.toFixed(1);
+    document.getElementById('heroLoadVolt').innerText = loadV.toFixed(0) + 'V · ' + loadA.toFixed(1) + 'A';
+    const ratio = loadW > 0 ? Math.min(100, Math.round((pvW / loadW) * 100)) : 100;
+    document.getElementById('heroSolarRatio').innerText = ratio + '%';
+
+    const badge = document.getElementById('gridBadge');
+    badge.className = 'hero-badge ' + (isGrid ? 'badge-grid-on' : 'badge-grid-off');
+    badge.innerText = isGrid ? '⚡ GRID ON' : '⚠️ GRID OFF (BATTERY)';
+
+    document.getElementById('matGridWatt').innerText = gridW.toFixed(0) + 'W';
+    document.getElementById('matGridAmp').innerText = gridA.toFixed(1) + 'A';
+    document.getElementById('matLoadWatt').innerText = loadW.toFixed(0) + 'W';
+    document.getElementById('matLoadAmp').innerText = loadA.toFixed(1) + 'A';
+    document.getElementById('matSolarWatt').innerText = pvW.toFixed(0) + 'W';
+    
+    const battAct = chW > disW ? chW : disW;
+    document.getElementById('matBattWatt').innerText = (chW > disW ? '+' : '-') + battAct.toFixed(0) + 'W';
+    document.getElementById('matBattWatt').className = chW > disW ? 'text-green' : 'text-red';
+    document.getElementById('matBattAmp').innerText = (chW > disW ? '+' : '-') + Math.abs(battAmp).toFixed(1) + 'A';
+
+    const outBox = document.getElementById('outageBox');
+    outBox.className = 'outage-box ' + (isGrid ? 'healthy' : '');
+    document.getElementById('outageTitle').innerText = isGrid ? '⚡ পল্লী বিদ্যুৎ গ্রিড সচল' : '⚠️ বিদ্যুৎ নেই - ব্যাটারি ব্যাকআপ চলছে';
+    document.getElementById('outageTimer').innerText = (isGrid ? gridV.toFixed(0) + 'V' : 'LOAD ' + loadW.toFixed(0) + 'W');
+
+    document.getElementById('flGridW').innerText = gridW.toFixed(0) + 'W';
+    document.getElementById('flGridA').innerText = gridA.toFixed(1) + 'A';
+    document.getElementById('flSolarW').innerText = pvW.toFixed(0) + 'W';
+    document.getElementById('flLoadW').innerText = loadW.toFixed(0) + 'W';
+    document.getElementById('flLoadA').innerText = loadA.toFixed(1) + 'A';
+    document.getElementById('flBattW').innerText = (chW > disW ? '+' : '-') + battAct.toFixed(0) + 'W';
+    document.getElementById('flBattA').innerText = (chW > disW ? '+' : '-') + Math.abs(battAmp).toFixed(1) + 'A';
+
+    const setFlow = (id, active, rev) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('idle', !active);
+      el.classList.toggle('rev', !!(rev && active));
+    };
+    setFlow('flGrid', gridW > 10, false);
+    setFlow('flSolar', pvW > 10, false);
+    setFlow('flBatt', battAct > 10, chW > disW);
+    setFlow('flLoad', loadW > 10, true);
+
+    // BATTERY TAB UPDATE
+    const soc = userConfig.battSoc;
+    const socEl = document.getElementById('battSocNum');
+    if (socEl) socEl.innerText = soc.toFixed(0);
+    const barEl = document.getElementById('battSocBar');
+    if (barEl) {
+      barEl.style.width = soc + '%';
+      barEl.style.background = soc >= 60 ? 'var(--green)' : (soc >= 30 ? 'var(--gold)' : 'var(--red)');
+    }
+    const currAmpEl = document.getElementById('battCurrentAmp');
+    if (currAmpEl) {
+      currAmpEl.innerText = (chW > disW ? '+' : '-') + Math.abs(battAmp).toFixed(1) + ' A' + (chW > disW ? ' (সোলার চার্জিং)' : ' (লোড ড্রেন)');
+      currAmpEl.style.color = chW > disW ? 'var(--green)' : 'var(--red)';
+    }
+    const chWEl = document.getElementById('battChargeWatt');
+    if (chWEl) chWEl.innerText = chW.toFixed(0) + ' W';
+    const disWEl = document.getElementById('battDischargeWatt');
+    if (disWEl) disWEl.innerText = disW.toFixed(0) + ' W';
+
+    const ttfEl = document.getElementById('battTimeToFull');
+    if (ttfEl) {
+      if (soc >= 98) {
+        ttfEl.innerText = 'ফুল চার্জড (Float)';
+      } else if (chW > 10 && battAmp > 0) {
+        const remAh = userConfig.battAh * ((100 - soc) / 100.0);
+        ttfEl.innerText = '~ ' + (remAh / battAmp).toFixed(1) + ' ঘণ্টা';
       }
     }
 
-    let particles = [];
-    function rebuildParticles() {
-      particles = [];
-      const n = getNodes();
-      if (system.pvPower > 15) {
-        for (let i = 0; i < 6; i++) particles.push(new Particle([n.pv, n.inverter], n.pv.color, 0.01));
+    updateApplianceAdvisor(pvW, isGrid, loadW);
+
+    const clk = document.getElementById('clockHeader');
+    if (clk) clk.innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+    if (liveChart) {
+      const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+      if (liveChart.data.labels.length >= maxPoints) {
+        liveChart.data.labels.shift();
+        liveChart.data.datasets.forEach(d => d.data.shift());
       }
-      if (system.inverterOutputPower > 15) {
-        for (let i = 0; i < 5; i++) particles.push(new Particle([n.inverter, n.load], n.load.color, 0.01));
-      }
-      if (system.batteryAmps > 0.5) {
-        for (let i = 0; i < 5; i++) particles.push(new Particle([n.inverter, n.battery], "#10b981", 0.009));
-      } else if (system.batteryAmps < -0.5) {
-        for (let i = 0; i < 5; i++) particles.push(new Particle([n.battery, n.inverter], "#ef4444", 0.009));
-      }
+      liveChart.data.labels.push(ts);
+      liveChart.data.datasets[0].data.push(pvW);
+      liveChart.data.datasets.data.push(loadW);
+      liveChart.data.datasets.data.push(gridW);
+      liveChart.update();
     }
 
-    function renderAnimation() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const n = getNodes();
-      const tracks = [[n.pv, n.inverter], [n.grid, n.inverter], [n.inverter, n.load], [n.inverter, n.battery]];
-      ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-      tracks.forEach(([p0, p1]) => { ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke(); });
+  } catch (err) {
+    document.getElementById('liveDot').className = 'pulse-dot offline';
+    document.getElementById('liveStatusText').innerText = 'CONNECTION ERROR';
+  }
+}
 
-      ctx.beginPath(); ctx.arc(n.inverter.x, n.inverter.y, 24, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0, 242, 254, 0.12)"; ctx.strokeStyle = "var(--cyan)"; ctx.lineWidth = 2; ctx.fill(); ctx.stroke();
+window.addEventListener('DOMContentLoaded', () => {
+  loadConfig();
+  initCharts();
+  fetchLiveData();
+  setInterval(fetchLiveData, 4000);
 
-      particles.forEach(p => { p.update(); p.draw(ctx); });
-      requestAnimationFrame(renderAnimation);
-    }
-    rebuildParticles();
-    renderAnimation();
-
-    function updateDashboardUI() {
-      const batChargePower = Math.max(0, system.batteryAmps * system.batteryVoltage);
-      const acSolarLoad = Math.max(0, system.inverterOutputPower - (system.gridOnline ? (system.inverterInputPower * 0.94) : 0));
-      system.pvPower = Math.round(acSolarLoad + batChargePower);
-
-      document.getElementById("badgePvVal").innerText = Math.round(system.pvPower) + " W";
-      document.getElementById("badgeGridVal").innerText = (system.gridOnline ? Math.round(system.inverterInputPower) : 0) + " W";
-      document.getElementById("badgeLoadVal").innerText = Math.round(system.inverterOutputPower) + " W";
-      document.getElementById("badgeBatVal").innerText = (system.batteryAmps >= 0 ? "+" : "") + system.batteryAmps.toFixed(1) + " A";
-      document.getElementById("badgeBatVal").style.color = system.batteryAmps >= 0 ? "var(--battery)" : "var(--battery-red)";
-
-      document.getElementById("tilePvW").innerHTML = Math.round(system.pvPower) + ` <small style="font-size:0.85rem;">W</small>`;
-      document.getElementById("tileBatSoc").innerHTML = Math.round(system.batterySoc) + ` <small style="font-size:0.85rem;">%</small>`;
-      document.getElementById("barBatSoc").style.width = Math.min(100, Math.max(5, system.batterySoc)) + "%";
-      document.getElementById("tileBatCurrent").innerText = (system.batteryAmps >= 0 ? "+" : "") + system.batteryAmps.toFixed(1) + " A (Solar Chg)";
-      document.getElementById("tileGridW").innerHTML = (system.gridOnline ? Math.round(system.inverterInputPower) : 0) + ` <small style="font-size:0.85rem;">W</small>`;
-      document.getElementById("tileLoadW").innerHTML = Math.round(system.inverterOutputPower) + ` <small style="font-size:0.85rem;">W</small>`;
-
-      if (system.batteryAmps > 0.5) {
-        const remAh = userSettings.batteryCapacity * Math.max(0, (100 - system.batterySoc) / 100);
-        const timeH = remAh / system.batteryAmps;
-        document.getElementById("statTimeToFull").innerText = system.batterySoc >= 98 ? "Full (Float)" : `~ ${timeH.toFixed(1)} Hours`;
-      }
-    }
-
-    async function pollData() {
-      try {
-        const res = await fetch('/api/states');
-        const states = await res.json();
-        document.getElementById("liveDot").className = "dot-indicator";
-        document.getElementById("connLabel").innerText = "Live Connected";
-
-        const getVal = (id, def = 0) => {
-          const item = states.find(s => s.entity_id === id);
-          return item ? (parseFloat(item.state) || def) : def;
-        };
-
-        system.inverterOutputPower = getVal('sensor.16a_output_line_power', getVal('sensor.energy_mate_inverter_output_power', 120));
-        system.inverterInputPower = getVal('sensor.20a_charging_line_power', getVal('sensor.energy_mate_inverter_input_power', 0));
-        system.gridOnline = (getVal('sensor.20a_charging_line_voltage', 228) > 120);
-
-        if (!userSettings.lockSoc) {
-          system.batterySoc = getVal('sensor.energy_mate_battery_soc', userSettings.manualSoc);
-        } else {
-          system.batterySoc = userSettings.manualSoc;
-        }
-
-        const haAmps = getVal('sensor.energy_mate_battery_net_current', null);
-        if (haAmps !== null && Math.abs(haAmps) > 0.1) {
-          system.batteryAmps = haAmps;
-        } else {
-          system.batteryAmps = userSettings.batteryAmps || 21.0;
-        }
-
-        rebuildParticles();
-        updateDashboardUI();
-      } catch (e) {
-        updateDashboardUI();
-      }
-    }
-
-    function switchModalTab(tabId) {
-      ['battery', 'solar', 'grid'].forEach(t => {
-        document.getElementById("tabBtn_" + t).className = "modal-tab-btn " + (t === tabId ? "active" : "");
-        document.getElementById("tabPane_" + t).className = "tab-pane " + (t === tabId ? "active" : "");
-      });
-    }
-
-    function openConfigModal(tab = "battery") {
-      document.getElementById("cfgSocSlider").value = Math.round(system.batterySoc);
-      document.getElementById("lblSocDisplay").innerText = Math.round(system.batterySoc) + "%";
-      document.getElementById("cfgBatAmps").value = system.batteryAmps.toFixed(1);
-      document.getElementById("cfgBatVolt").value = system.batteryVoltage.toFixed(1);
-      document.getElementById("cfgBatCap").value = userSettings.batteryCapacity || 200;
-      document.getElementById("cfgLockSoc").checked = userSettings.lockSoc;
-      switchModalTab(tab);
-      document.getElementById("configModal").style.display = "flex";
-    }
-
-    function closeConfigModal() { document.getElementById("configModal").style.display = "none"; }
-
-    function onSocSlider(val) {
-      document.getElementById("lblSocDisplay").innerText = val + "%";
-      system.batterySoc = parseFloat(val);
-      updateDashboardUI();
-    }
-
-    function setSocPreset(val) {
-      document.getElementById("cfgSocSlider").value = val;
-      onSocSlider(val);
-    }
-
-    function setBatAmpsPreset(val) {
-      document.getElementById("cfgBatAmps").value = val.toFixed(1);
-      system.batteryAmps = parseFloat(val);
-      rebuildParticles();
-      updateDashboardUI();
-    }
-
-    function saveAllSettings() {
-      userSettings.manualSoc = parseFloat(document.getElementById("cfgSocSlider").value) || 85;
-      userSettings.lockSoc = document.getElementById("cfgLockSoc").checked;
-      userSettings.batteryAmps = parseFloat(document.getElementById("cfgBatAmps").value) || 21.0;
-      userSettings.batteryVoltage = parseFloat(document.getElementById("cfgBatVolt").value) || 13.5;
-      userSettings.batteryCapacity = parseFloat(document.getElementById("cfgBatCap").value) || 200;
-
-      localStorage.setItem("sako_user_settings", JSON.stringify(userSettings));
-
-      fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userSettings)
-      }).catch(e => {});
-
-      system.batterySoc = userSettings.manualSoc;
-      system.batteryAmps = userSettings.batteryAmps;
-      system.batteryVoltage = userSettings.batteryVoltage;
-
-      closeConfigModal();
-      rebuildParticles();
-      updateDashboardUI();
-    }
-
-    setInterval(pollData, 3500);
-    pollData();
-  </script>
+  const btnSet = document.getElementById('btnSet');
+  if (btnSet) btnSet.addEventListener('click', openSettings);
+  const btnRefresh = document.getElementById('btnRefresh');
+  if (btnRefresh) btnRefresh.addEventListener('click', () => { fetchLiveData(); showToast('তথ্য রিফ্রেশ করা হয়েছে'); });
+  const btnNotif = document.getElementById('btnNotif');
+  if (btnNotif) btnNotif.addEventListener('click', () => { showToast('🔔 সব প্যারামিটার স্বাভাবিক অবস্থায় আছে'); });
+});
+</script>
 </body>
 </html>
