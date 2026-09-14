@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Sako Lite</title>
+<style>
+:root{--bg:#0b0e14;--card:#141a26;--card2:#1a2231;--line:#232d40;--txt:#f2f5fa;--mut:#8b96ab;--gold:#f5c451;--grn:#34d399;--blu:#60a5fa;--org:#fb923c;--red:#f87171}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+.wrap{max-width:400px;margin:0 auto;padding:12px 12px 20px;width:100%}
+/* ---- network banner ---- */
+html{overflow-x:hidden}
+.netb{position:sticky;top:0;z-index:60;margin:0 auto 10px;width:100%;max-width:400px;padding:8px 14px;font-size:11px;font-weight:700;text-align:center}
+.netb.warn{background:rgba(251,146,60,.14);color:var(--org);border-bottom:1px solid rgba(251,146,60,.3)}
+.netb.err{background:rgba(248,113,113,.14);color:var(--red);border-bottom:1px solid rgba(248,113,113,.35)}
+.netb.ok{background:rgba(52,211,153,.10);color:var(--grn);border-bottom:1px solid rgba(52,211,153,.25)}
+/* ---- pills ---- */
+.pill{font-size:10px;font-weight:800;padding:5px 10px;border-radius:99px;letter-spacing:.06em;white-space:nowrap}
+.pill.on{background:rgba(52,211,153,.22);color:var(--grn);border:1px solid rgba(52,211,153,.7);box-shadow:0 0 12px rgba(52,211,153,.25)}
+.pill.off{background:rgba(248,113,113,.22);color:var(--red);border:1px solid rgba(248,113,113,.7);box-shadow:0 0 12px rgba(248,113,113,.25)}
+.pill.warn{background:rgba(251,146,60,.15);color:var(--org);border:1px solid rgba(251,146,60,.4)}
+.pill.wait{background:rgba(139,150,171,.15);color:var(--mut);border:1px solid rgba(139,150,171,.35)}
+/* ---- buttons ---- */
+.icobtn{width:36px;height:36px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:16px;cursor:pointer}
+.icobtn.sm{width:30px;height:30px;font-size:14px;border-radius:10px}
+.btn{padding:9px 14px;border-radius:11px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-weight:800;font-size:13px;cursor:pointer}
+.btn.gold{background:rgba(245,196,81,.15);border-color:rgba(245,196,81,.5);color:var(--gold)}
+.btn.ghost{background:none}
+.testbtn{padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-weight:700;font-size:11px;cursor:pointer;margin-left:6px}
+/* ---- hero ---- */
+.herotop{display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative;z-index:1}
+.hctl{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.hrow{display:flex;align-items:center;gap:6px}
+.hctl small{color:var(--mut);font-size:10px;white-space:nowrap}
+.bel{position:relative}
+.hero{background:linear-gradient(160deg,#1b2334,#101623);border:1px solid var(--line);border-radius:20px;padding:12px 16px 10px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,rgba(245,196,81,.22),transparent 70%);pointer-events:none}
+.hero .lbl{font-size:10px;letter-spacing:.14em;color:var(--mut);font-weight:800}
+.hero .big{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:0;transition:color .3s}
+.hero .big small{font-size:14px;color:var(--mut);font-weight:600}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:9px 0 3px}
+.g4i{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:7px 4px;text-align:center}
+.g4i small{display:block;color:var(--mut);font-size:8.5px;margin-bottom:3px;letter-spacing:.02em}
+.g4i b{font-size:12px;transition:color .3s}
+.g4i .ag{display:block;color:var(--mut);font-size:8px;margin-top:2px;min-height:9px;font-weight:600}
+/* ---- reference curve image ---- */
+.refimg{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);margin-top:8px;background:#fff;display:block}
+/* ---- flow ---- */
+.flowcard{background:var(--card);border:1px solid var(--line);border-radius:22px;margin-top:12px;padding:10px 6px 4px}
+.flowcard svg{width:100%;height:auto;display:block}
+.fnode{font-size:9px;fill:var(--mut);font-weight:700;letter-spacing:.05em}
+.fval{font-size:13px;fill:var(--txt);font-weight:800}
+.fline{fill:none;stroke-width:3;stroke-linecap:round;stroke-dasharray:7 7;animation:dash 1s linear infinite}
+.fline.idle{animation:none;opacity:.18;stroke-dasharray:none}
+.fline.rev{animation-direction:reverse}
+@keyframes dash{to{stroke-dashoffset:-14}}
+/* ---- cards ---- */
+.today{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px}
+.today .h{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--mut);margin-bottom:10px}
+.trow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;align-items:center}
+.trow:first-of-type{border-top:0}
+.trow span{color:var(--mut)}.trow b{font-weight:800;text-align:right;transition:color .3s}
+.trow b.good{color:var(--grn)}.trow b.gold{color:var(--gold)}.trow b.org{color:var(--org)}.trow b.red{color:var(--red)}
+canvas.chart{width:100%;height:auto;margin-top:8px;border-radius:10px}
+.foot{display:flex;justify-content:space-between;color:var(--mut);font-size:10px;padding:14px 4px 4px}
+.foot .cname{color:var(--txt)}
+/* ---- bar ---- */
+.bar{height:10px;border-radius:99px;background:var(--bg);border:1px solid var(--line);overflow:hidden;margin:8px 0}
+.bar>i{display:block;height:100%;border-radius:99px;transition:width .5s,background .5s}
+/* ---- big stat ---- */
+.bigstat{display:flex;align-items:baseline;gap:6px}
+.bigstat b{font-size:34px;font-weight:800;letter-spacing:-.03em}
+.bigstat small{color:var(--mut);font-size:12px;font-weight:700}
+.kv2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.kv2 .k{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 10px}
+.kv2 .k small{display:block;color:var(--mut);font-size:9px;margin-bottom:3px;letter-spacing:.03em}
+.kv2 .k b{font-size:15px;font-weight:800}
+/* ---- range segments ---- */
+.hseg{display:flex;gap:6px;margin:10px 0 4px}
+.hsegbtn{flex:1;padding:8px 4px;border-radius:8px;border:1px solid #2a3550;background:#131b2b;color:var(--mut);font:700 11px system-ui;cursor:pointer}
+.hsegbtn.on{background:rgba(245,196,81,.14);color:var(--gold);border-color:var(--gold)}
+/* ---- tabs ---- */
+.pane{display:none}
+.pane.on{display:block;animation:paneIn .28s ease}
+@keyframes paneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:400px;display:flex;background:#0f1522;border-top:1px solid #232c44;z-index:40}
+.tabbtn{flex:1;background:none;border:none;color:var(--mut);font:700 10px system-ui;padding:8px 0 10px;cursor:pointer;transition:color .2s,border-color .2s;line-height:1.15}
+.tabbtn .ic{display:block;font-size:16px;margin-bottom:2px}
+.tabbtn.on{color:var(--gold);border-top:2px solid var(--gold)}
+/* ---- forms ---- */
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
+.sheet h3{font-size:12px;letter-spacing:.08em;color:var(--gold);margin:14px 0 8px}
+.sheet h3:first-child{margin-top:0}
+label{display:block;font-size:11px;color:var(--mut);margin:9px 0 4px;font-weight:600}
+input,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;color:var(--txt);font-size:13px}
+input:focus,select:focus{outline:none;border-color:var(--gold)}
+.srow{display:flex;gap:8px;margin-top:14px}
+.srow .btn{flex:1}
+/* ---- forecast table ---- */
+.fcrow{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:4px;padding:7px 0;border-top:1px solid var(--line);font-size:12px;align-items:center}
+.fcrow:first-of-type{border-top:0}
+.fcrow.head{color:var(--mut);font-size:10px;font-weight:800;letter-spacing:.05em}
+.fcrow span{color:var(--mut)}
+.fcrow b{text-align:right;font-weight:800}
+/* ---- modal ---- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal.open{display:flex}
+.modal .sheet{max-height:85vh;overflow:auto;max-width:430px;width:100%;position:static;box-shadow:none}
+.nitem{display:flex;gap:9px;padding:9px 2px;border-top:1px solid var(--line);font-size:12px}
+.nitem:first-of-type{border-top:0}
+.nitem small{display:block;color:var(--mut);font-size:10px;margin-top:1px}
+#expImg{max-width:100%;border-radius:10px;border:1px solid var(--line)}
+#err{display:none;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);color:var(--red);border-radius:12px;padding:8px 12px;font-size:12px;font-weight:700;margin-bottom:10px}
+.note{color:var(--mut);font-size:9.5px;display:block;margin-top:6px;line-height:1.45}
+/* ---- V10 · glassy premium ---- */
+.glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(620px 420px at 85% -5%,rgba(245,196,81,.10),transparent 60%),radial-gradient(520px 380px at -10% 30%,rgba(52,211,153,.07),transparent 60%),radial-gradient(520px 420px at 110% 78%,rgba(96,165,250,.08),transparent 60%)}
+.wrap{position:relative;z-index:1}
+.hero{background:linear-gradient(165deg,rgba(43,57,84,.62),rgba(15,21,34,.72));backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border-color:rgba(148,163,184,.20);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 10px 30px rgba(0,0,0,.35)}
+.today,.flowcard,.sheet{background:linear-gradient(165deg,rgba(36,48,70,.52),rgba(16,22,35,.64));backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);border-color:rgba(148,163,184,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 26px rgba(0,0,0,.32)}
+.tabbar{background:rgba(12,17,29,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.g4i,.kv2 .k{background:rgba(10,14,21,.52);border-color:rgba(148,163,184,.14)}
+.fcrow.head,.hsegbtn{border-color:rgba(148,163,184,.18)}
+
+@keyframes spinIco { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.spinning { animation: spinIco 0.7s linear infinite !important; }
+.testbtn.active { background: var(--gold) !important; color: #000 !important; font-weight: 700; }
+
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+  <div id="err"></div>
+
+  <!-- ================= TAB 1 · HOME (clean) ================= -->
+  <div id="panelHome" class="pane on">
+    <div class="hero">
+      <div class="herotop">
+        <div class="lbl">MAIN GRID · NOW</div>
+        <div class="hctl">
+          <div class="hrow">
+            <button class="icobtn sm" id="btnSync" title="Refresh">↻</button>
+            <button class="icobtn sm" id="btnSet" title="Settings">⚙</button>
+          </div>
+          <small id="clock">--:--</small>
+        </div>
+      </div>
+      <div class="big"><span id="hW">--</span> <small>W</small></div>
+      <small id="hSub" style="font-size:11px;font-weight:700;display:block;min-height:15px">&nbsp;</small>
+      <div class="g4">
+        <div class="g4i"><small>GRID IN</small><b id="gIn">--</b></div>
+        <div class="g4i"><small>LOAD OUT</small><b id="gOut">--</b></div>
+        <div class="g4i"><small>SOLAR</small><b id="gSol">--</b></div>
+        <div class="g4i"><small>BATTERY</small><b id="gBatt">--</b></div>
+      </div>
+    </div>
+
+    <div class="flowcard">
+      <svg viewBox="0 0 340 226">
+        <line id="lnGrid" class="fline idle" x1="88" y1="51" x2="145" y2="82" stroke="#60a5fa"/>
+        <line id="lnSol" class="fline idle" x1="252" y1="51" x2="195" y2="82" stroke="#f5c451"/>
+        <line id="lnBat" class="fline idle" x1="88" y1="145" x2="145" y2="114" stroke="#34d399"/>
+        <line id="lnHome" class="fline idle" x1="252" y1="145" x2="195" y2="114" stroke="#fb923c"/>
+        <circle cx="170" cy="98" r="30" fill="#1a2231" stroke="#f5c451" stroke-width="2"/>
+        <text x="170" y="95" text-anchor="middle" style="font-size:11px;font-weight:800;fill:var(--txt)">SAKO</text>
+        <text x="170" y="107" text-anchor="middle" style="font-size:8px;fill:var(--mut)">2KW</text>
+        <text id="txUse" x="170" y="141" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+        <text x="52" y="24" text-anchor="middle" class="fnode">⚡ GRID → INV</text>
+        <text id="txGrid" x="52" y="40" text-anchor="middle" class="fval">--</text>
+        <text id="txGridS" x="52" y="53" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+        <text x="288" y="24" text-anchor="middle" class="fnode">☀ SOLAR</text>
+        <text id="txSol" x="288" y="40" text-anchor="middle" class="fval">--</text>
+        <text id="txSolS" x="288" y="53" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+        <text id="txBatNode" x="52" y="172" text-anchor="middle" class="fnode">🔋 BATT</text>
+        <text id="txBat" x="52" y="188" text-anchor="middle" class="fval" style="font-size:11px">--</text>
+        <text id="txBatA" x="52" y="201" text-anchor="middle" style="font-size:9px;fill:var(--mut)">--</text>
+        <text id="txBatS" x="52" y="214" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+        <text x="288" y="172" text-anchor="middle" class="fnode">🏠 INV → LOAD</text>
+        <text id="txHome" x="288" y="188" text-anchor="middle" class="fval">--</text>
+        <text id="txHomeS" x="288" y="201" text-anchor="middle" style="font-size:8px;fill:var(--mut)"></text>
+      </svg>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:0 12px 8px;gap:8px">
+        <small style="font-size:10px" id="gHrs">--</small>
+        
+      </div>
+    </div>
+
+    <div class="today">
+      <div class="h">TODAY</div>
+      <div class="trow"><span>☀ Solar generated</span><b id="tSol" class="gold">--</b></div>
+      <div class="trow"><span>⚡ Grid (main)</span><b id="tGrid">--</b></div>
+      <div class="trow"><span>⚡ Grid → Inverter (in)</span><b id="tIn">--</b></div>
+      <div class="trow"><span>🏠 Inverter → Load (out)</span><b id="tOut">--</b></div>
+      <div class="trow"><span>🔋 Battery charged today</span><b id="tBat">--</b></div>
+    </div>
+
+    <div class="today">
+      <div class="h">📍 TODAY PEAKS</div>
+      <div class="trow"><span>☀ Solar</span><b id="pkSol">--</b></div>
+      <div class="trow"><span>⚡ Main grid</span><b id="pkMain">--</b></div>
+      <div class="trow"><span>⚡ Grid → Inverter (in)</span><b id="pkIn">--</b></div>
+      <div class="trow"><span>🏠 Inverter → Load (out)</span><b id="pkOut">--</b></div>
+      <div class="trow"><span>🔋 Battery top charging</span><b id="pkCh" class="good">--</b></div>
+      <div class="trow"><span>🔋 Battery top discharging</span><b id="pkDis" class="org">--</b></div>
+          </div>
+
+    <div class="foot"><span>Created by <b class="cname">Syed MD Shad</b></span><span id="appV">V12.2</span></div>
+  </div>
+
+</div>
+
+
+
+
+<!-- ================= MODAL: SETTINGS & CALIBRATION ================= -->
+<div class="modal" id="setmodal">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:13px;letter-spacing:.08em;color:var(--gold);margin:0">⚙️ SYSTEM &amp; BATTERY SETTINGS</h3>
+      <button class="icobtn sm" id="btnSetClose" style="border:none;background:transparent;font-size:18px;cursor:pointer;color:var(--txt)">✕</button>
+    </div>
+    
+    <label>🔋 Battery State of Charge (SOC %)</label>
+    <div style="display:flex;gap:8px;margin:10px 0 4px;flex-wrap:wrap">
+      <button type="button" class="testbtn qSoc" data-v="0"  style="flex:1;justify-content:center;padding:10px 0">0%</button>
+      <button type="button" class="testbtn qSoc" data-v="20" style="flex:1;justify-content:center;padding:10px 0">20%</button>
+      <button type="button" class="testbtn qSoc" data-v="40" style="flex:1;justify-content:center;padding:10px 0">40%</button>
+      <button type="button" class="testbtn qSoc" data-v="60" style="flex:1;justify-content:center;padding:10px 0">60%</button>
+      <button type="button" class="testbtn qSoc" data-v="80" style="flex:1;justify-content:center;padding:10px 0">80%</button>
+      <button type="button" class="testbtn qSoc" data-v="100"style="flex:1;justify-content:center;padding:10px 0">100%</button>
+    </div>
+    <p style="font-size:11px;color:var(--mut);margin-top:8px">Tap a % → battery set hobe sei % theke, tarpor auto charge/discharge count shuru hobe.</p>
+  </div>
+</div>
+
+<div class="modal" id="exmodal">
+  <div class="sheet" style="text-align:center">
+    <h3 style="font-size:12px;letter-spacing:.08em;color:var(--gold);margin-top:0">📷 EXPORT</h3>
+    <img id="expImg" alt="export">
+    <p id="expNote" style="color:var(--mut);font-size:11px">Tap Save JPEG to keep it.</p>
+    <div class="srow"><a class="btn gold" id="expA" download="sako.jpg" style="text-decoration:none;text-align:center">Save JPEG</a><button class="btn ghost" id="btnExClose">Close</button></div>
+  </div>
+</div>
+
+<script>
+window.onerror=function(m,s,l,c,e){
+  try{
+    var el=document.getElementById("err");
+    if(el){el.style.display="block";el.textContent="APP: "+m+" (line "+l+")";}
+  }catch(x){}
+  return false;
+};
+
+// ============================ 1 · CONFIG & MAPPINGS ============================
+const APP_VER=40,APP_VER_MAJOR="12.2",APP_NAME="Sako Lite V12";
+const E={
+  grid:"binary_sensor.energy_mate_v4_grid_present",
+  solP:"sensor.energy_mate_v4_pv_estimated_power",chP:"sensor.energy_mate_v4_battery_charge_power",disP:"sensor.energy_mate_v4_battery_discharge_power",
+  soc:"sensor.energy_mate_v4_battery_estimated_soc",battA:"sensor.energy_mate_v4_battery_current",
+  mainD:"sensor.energy_mate_v4_main_daily",solD:"sensor.energy_mate_v4_pv_daily",inD:"sensor.energy_mate_v4_input_daily",outD:"sensor.energy_mate_v4_output_daily",
+  bChD:"sensor.energy_mate_v4_battery_charge_daily",bDisD:"sensor.energy_mate_v4_battery_discharge_daily",
+  bChSolD:"sensor.energy_mate_v4_battery_charge_solar_daily",bChGrD:"sensor.energy_mate_v4_battery_charge_grid_daily",
+  pvPeakD:"sensor.energy_mate_v4_pv_peak_today",onH:"sensor.energy_mate_v4_grid_on_today",offH:"sensor.energy_mate_v4_grid_off_today",
+  ovh:"sensor.energy_mate_v4_inverter_overhead_power",ownUse:"sensor.energy_mate_v4_inverter_own_use",
+  pkMainW:"sensor.energy_mate_v4_peak_main_w",pkMainT:"sensor.energy_mate_v4_peak_main_time",
+  pkInW:"sensor.energy_mate_v4_peak_in_w",pkInT:"sensor.energy_mate_v4_peak_in_time",
+  pkOutW:"sensor.energy_mate_v4_peak_out_w",pkOutT:"sensor.energy_mate_v4_peak_out_time",
+  pkPvT:"sensor.energy_mate_v4_peak_pv_time",
+  pkChW:"sensor.energy_mate_v4_peak_ch_a",pkChT:"sensor.energy_mate_v4_peak_ch_time",
+  pkDisW:"sensor.energy_mate_v4_peak_dis_a",pkDisT:"sensor.energy_mate_v4_peak_dis_time",
+  siteLat:"input_number.energy_final_site_lat",siteLon:"input_number.energy_final_site_lon",
+  arrayP:"sensor.energy_mate_v4_effective_pv_array_power"
+};
+const R={
+  mp:"sensor.baasaar_mein_laain_power",ma:"sensor.baasaar_mein_laain_current",mv:"sensor.baasaar_mein_laain_voltage",
+  ip:"sensor.20a_charging_line_power",ia:"sensor.20a_charging_line_current",iv:"sensor.20a_charging_line_voltage",
+  op:"sensor.16a_output_line_power",oa:"sensor.16a_output_line_current",ov:"sensor.16a_output_line_voltage"
+};
+
+const $=id=>document.getElementById(id);
+const fmt=(v,d=0)=>Number.isFinite(v)?v.toLocaleString([],{maximumFractionDigits:d,minimumFractionDigits:d}):"0";
+const kwh=v=>Number.isFinite(v)?fmt(v,1)+" Unit":"0.0 Unit";
+const kwh3=v=>Number.isFinite(v)?fmt(v,1):"0.0";
+const st=id=>(ALL[id]?ALL[id].state:"");
+const num=id=>{const v=ALL[id]?+ALL[id].state:NaN;return Number.isFinite(v)?v:NaN};
+
+// Local storage and settings cache
+let SETTINGS = {
+  battery_soc: 85,
+  battery_voltage: 13.5,
+  solar_mode: "auto",
+  manual_solar_watts: 320
+};
+
+try {
+  const ls = JSON.parse(localStorage.getItem("sako_user_settings") || "{}");
+  Object.assign(SETTINGS, ls);
+} catch(e){}
+
+let ALL = {};
+let RUN = {
+  g: true, mp: 125, ip: 0, op: 125, pv: 320, ch: 283, dis: 0,
+  selfW: SETTINGS.inv_own_use || 75, soc: SETTINGS.battery_soc, amps: 0,
+  sunEl: 45, dayF: 0.8
+};
+let TOD = { grid: 0.35, in: 0.05, out: 0.42, pv: 0.65, ch: 0.38, dis: 0.02 };
+let CFG_RATE = 15.00;
+let CFG_SOL_RATE = 15.00;
+
+function setSub(txt,col){
+  try{const el=$("hSub");if(el){el.textContent=txt;el.style.color=col||"#8b96ab"}}catch(e){}
+}
+
+// ============================ 2 · REAL-TIME SYNC ============================
+let syncBusy = false;
+async function sync(forceVisual=false){
+  if(syncBusy && !forceVisual) return;
+  syncBusy = true;
+  
+  const syncBtn = $("btnSync");
+  if(forceVisual && syncBtn) syncBtn.classList.add("spinning");
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
+    
+    const res = await fetch("/api/states", {
+      signal: controller.signal,
+      cache: "no-store",
+      headers: { "Accept": "application/json" }
+    });
+    clearTimeout(timeoutId);
+
+    if(res.ok){
+      const data = await res.json();
+      ALL = {};
+      for(const item of data) {
+        ALL[item.entity_id] = item;
+      }
+      renderAll();
+    } else {
+      throw new Error("HTTP " + res.status);
+    }
+  } catch(err) {
+    renderAll();
+  } finally {
+    syncBusy = false;
+    if(syncBtn) syncBtn.classList.remove("spinning");
+  }
+}
+
+// ============================ 3 · POWER MODEL ============================
+function computePower(){
+  const mp = num(R.mp) || (ALL[R.mp] ? +ALL[R.mp].state : RUN.mp);
+  const ipRaw = num(R.ip) || (ALL[R.ip] ? +ALL[R.ip].state : RUN.ip);
+  const op = num(R.op) || (ALL[R.op] ? +ALL[R.op].state : RUN.op);
+  
+  const g = (st(E.grid) === "on") || (ipRaw > 10) || (mp > 10);
+  const ip = g ? ipRaw : 0;
+  
+  const chA = parseFloat(SETTINGS.grid_charge_cap_a) || 10;
+  const chargeW = Math.round(chA * 13.5);
+  
+  let pv = 0;
+  let ch = 0;
+  let dis = 0;
+
+  if (SETTINGS.solar_mode === "manual") {
+    pv = parseFloat(SETTINGS.manual_solar_watts) || 320;
+    ch = chargeW;
+    dis = 0;
+  } else {
+    // SAKO Hybrid MPPT logic: Solar covers load + battery charge
+    if (g) {
+      const loadDeficit = Math.max(0, op - ip);
+      pv = Math.max(loadDeficit + chargeW, chargeW);
+    } else {
+      pv = Math.max(op + chargeW, chargeW);
+    }
+    ch = chargeW;
+    dis = 0;
+  }
+
+  // Override with Home Assistant sensor if actively transmitting
+  const pvSens = num(E.solP);
+  if(Number.isFinite(pvSens)) pv = pvSens;   // server value is authoritative (0 = no solar now)
+  const chSens = num(E.chP);
+  if(Number.isFinite(chSens)) ch = chSens;
+  const disSens = num(E.disP);
+  if(Number.isFinite(disSens)) dis = disSens;
+
+  let soc = num(E.soc);
+  if(!Number.isFinite(soc)) soc = parseFloat(SETTINGS.battery_soc) || 85;
+  const battA = num(E.battA);
+  const amps = Number.isFinite(battA) ? battA : (ch > dis ? ch/13.5 : 0);
+
+  return {
+    g, mp, ip, op, pv, ch, dis,
+    soc, amps, sunEl: 45, dayF: 0.85
+  };
+}
+
+// ============================ 4 · RENDER FUNCTIONS ============================
+function setLine(id, active, reverse){
+  const el = $(id);
+  if(!el) return;
+  el.classList.toggle("idle", !active);
+  el.classList.toggle("rev", !!(reverse && active));
+}
+
+function renderHome(){
+  const mp = RUN.mp, ip = RUN.ip, op = RUN.op, pv = RUN.pv, ch = RUN.ch, dis = RUN.dis, soc = RUN.soc;
+  
+  // Hero Main Grid
+  if($("hW")){
+    $("hW").textContent = fmt(RUN.g ? (mp || op) : 0);
+    $("hW").style.color = RUN.g ? "#34d399" : "#f87171";
+  }
+
+  // 4 Top Badges
+  if($("gIn")) {
+    $("gIn").textContent = fmt(ip) + "W";
+    $("gIn").style.color = ip > 5 ? "#34d399" : "";
+  }
+  if($("gOut")) {
+    $("gOut").textContent = fmt(op) + "W";
+    $("gOut").style.color = op > 5 ? "#fb923c" : "";
+  }
+  if($("gSol")) {
+    $("gSol").textContent = fmt(pv) + "W";
+    $("gSol").style.color = pv > 5 ? "#f5c451" : "";
+  }
+  if($("gBatt")) {
+    $("gBatt").textContent = (ch >= dis ? "+" : "−") + fmt(ch > dis ? ch : dis) + "W · " + fmt(soc, 0) + "%";
+    $("gBatt").style.color = ch >= dis ? "#34d399" : "#f87171";
+  }
+
+  // Animated Flow Lines
+  setLine("lnGrid", ip > 5);
+  setLine("lnSol", pv > 5);
+  setLine("lnBat", (ch > 5 || dis > 5), ch >= dis);
+  setLine("lnHome", op > 5, true);
+
+  // Diagram text
+  if($("txGrid")) $("txGrid").textContent = fmt(ip) + "W";
+  if($("txSol")) $("txSol").textContent = fmt(pv) + "W";
+  if($("txSolS")) $("txSolS").textContent = pv > 5 ? fmt(pv/13.5, 1) + "A" : "";
+  if($("txHome")) $("txHome").textContent = fmt(op) + "W";
+  const batFlow = (ch > dis ? ch : dis);
+  const ownU = num(E.ownUse);
+  if($("txUse")) $("txUse").textContent = "own use " + (Number.isFinite(ownU) ? fmt(ownU, 0) : "75") + "W";
+  if($("txBat")) $("txBat").textContent = batFlow > 3 ? (ch >= dis ? "+" : "−") + fmt(batFlow) + "W · " + fmt(soc, 0) + "%" : fmt(soc, 0) + "% · idle";
+  if($("txBatA")) $("txBatA").textContent = Math.abs(RUN.amps) > 0.1 ? (ch >= dis ? "+" : "−") + fmt(Math.abs(RUN.amps), 1) + "A" : "0A";
+
+  // Today Stats
+  const sD = num(E.solD) || TOD.pv;
+  const gD = num(E.mainD) || TOD.grid;
+  const inD = num(E.inD) || TOD.in;
+  const outD = num(E.outD) || TOD.out;
+  
+  if($("tSol")) $("tSol").textContent = kwh(sD);
+  if($("tGrid")) $("tGrid").textContent = kwh(gD);
+  if($("tIn")) $("tIn").textContent = kwh3(inD);
+  if($("tOut")) $("tOut").textContent = kwh3(outD);
+  const chSolU = num(E.bChSolD) || 0;   // units the PV gave to the battery
+  const chGrU = num(E.bChGrD) || 0;     // units the grid gave to the battery
+  if($("tBat")) $("tBat").innerHTML = '☀ ' + fmt(chSolU, 1) + ' U · ⚡ ' + fmt(chGrU, 1) + ' U';
+
+  // Grid Hours
+  const onH = num(E.onH) || 8.5;
+  const offH = num(E.offH) || 0.0;
+  if($("gHrs")) {
+    $("gHrs").innerHTML = '⚡ <b style="color:#34d399">' + fmt(onH, 1) + 'h on</b> · <b style="color:#f87171">' + fmt(offH, 1) + 'h off</b>';
+  }
+
+  // Peaks (server-tracked, today's max + time it happened)
+  const pkLine = (el, w, t, unit, plus) => {
+    if(!el) return;
+    const ok = Number.isFinite(w) && w > 0;
+    const time = (ok && t && t !== "--") ? ' <span style="font-size:9px;color:var(--mut);font-weight:400">@' + t + '</span>' : '';
+    el.innerHTML = ok ? (plus ? "+" : "") + fmt(w, unit === "A" ? 1 : 0) + " " + unit + time : "--" + time;
+  };
+  pkLine($("pkSol"), num(E.pvPeakD), st(E.pkPvT), "W", false);
+  pkLine($("pkMain"), num(E.pkMainW), st(E.pkMainT), "W", false);
+  pkLine($("pkIn"), num(E.pkInW), st(E.pkInT), "W", false);
+  pkLine($("pkOut"), num(E.pkOutW), st(E.pkOutT), "W", false);
+  pkLine($("pkCh"), num(E.pkChW), st(E.pkChT), "A", true);
+  pkLine($("pkDis"), num(E.pkDisW), st(E.pkDisT), "A", false);
+}
+
+function renderAll(){
+  RUN = computePower();
+  renderHome();
+}
+
+// ============================ 5 · MODALS & TABS ============================
+function openSettingsModal(){
+  const m = $("setmodal");
+  if(!m) return;
+  m.classList.add("open");
+}
+
+function closeSettingsModal(){
+  const m = $("setmodal");
+  if(m) m.classList.remove("open");
+}
+
+function wireUI(){
+  // Top bar buttons
+  const bSet = $("btnSet");
+  if(bSet) {
+    bSet.onclick = openSettingsModal;
+    bSet.ontouchstart = (e) => { e.preventDefault(); openSettingsModal(); };
+  }
+
+  const bSync = $("btnSync");
+  if(bSync) {
+    bSync.onclick = () => sync(true);
+    bSync.ontouchstart = (e) => { e.preventDefault(); sync(true); };
+  }
+
+  // Modal close buttons
+  const bSetClose = $("btnSetClose");
+  if(bSetClose) bSetClose.onclick = closeSettingsModal;
+  // Clickable cards to open settings
+  const bCard = $("gBatt");
+  if(bCard) {
+    bCard.style.cursor = "pointer";
+    bCard.onclick = openSettingsModal;
+  }
+  const sCard = $("gSol");
+  if(sCard) {
+    sCard.style.cursor = "pointer";
+    sCard.onclick = openSettingsModal;
+  }
+
+  // SOC quick buttons: tap -> set battery %, counting starts from there
+  document.querySelectorAll(".qSoc").forEach(btn => {
+    btn.onclick = () => {
+      const v = parseFloat(btn.getAttribute("data-v")) || 0;
+      SETTINGS.battery_soc = v;
+      localStorage.setItem("sako_user_settings", JSON.stringify(SETTINGS));
+      fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ battery_soc: v })
+      }).catch(()=>{});
+      setSub("✓ Battery set " + v + "% — counting from here", "#34d399");
+      closeSettingsModal();
+      renderAll();
+    };
+  });
+
+}
+
+function tick(){
+  try{
+    const d = new Date();
+    const cEl = $("clock");
+    if(cEl) cEl.textContent = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true });
+  }catch(e){}
+}
+
+// Startup
+document.addEventListener("DOMContentLoaded", () => {
+  wireUI();
+  tick();
+  renderAll();
+  sync();
+  setInterval(tick, 1000);
+  setInterval(sync, 4000);
+});
+
+// Immediate execution in case DOM is already loaded
+wireUI();
+tick();
+renderAll();
+sync();
+setInterval(tick, 1000);
+setInterval(sync, 4000);
+</script>
+</body>
+</html>
